@@ -1,0 +1,238 @@
+const express = require("express");
+const router = express.Router();
+const bcrypt = require("bcryptjs");
+const { randomUUID } = require("crypto");
+const AdminUser = require("../models/AdminUser");
+const {
+    upsertOAuthAdmin,
+    signAdminToken,
+    requireAdmin,
+} = require("../utils/auth");
+const {
+    getOAuthRedirectUrl,
+    resolveAdminRedirect,
+} = require("../utils/helpers");
+
+// Login
+router.post("/admin/login", async (req, res) => {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const password = String(req.body?.password || "");
+    if (!email || !password) {
+        return res.status(400).json({ error: "Email and password required" });
+    }
+    let user = await AdminUser.findOne({ email });
+    if (!user) {
+        // Auto-register pending admin on first login attempt? 
+        // The original code (lines 1196-1212) did this.
+        const passwordHash = await bcrypt.hash(password, 10);
+        user = await AdminUser.create({
+            email,
+            passwordHash,
+            role: "admin",
+            status: "pending",
+            provider: "password",
+        });
+        return res.status(403).json({ status: "pending" });
+    }
+    const valid = await bcrypt.compare(password, user.passwordHash || "");
+    if (!valid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+    }
+    if (user.status !== "approved") {
+        return res.status(403).json({ status: "pending" });
+    }
+    const token = signAdminToken(user);
+    res.json({
+        token,
+        user: { id: user._id, email: user.email, role: user.role, name: user.name },
+    });
+});
+
+// OAuth Direct Mock/Handler
+router.post("/admin/oauth", async (req, res) => {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const provider = String(req.body?.provider || "").trim().toLowerCase();
+    const name = String(req.body?.name || "").trim();
+    if (!email || !provider) {
+        return res.status(400).json({ error: "Email and provider required" });
+    }
+    let user = await AdminUser.findOne({ email });
+    if (!user) {
+        user = await AdminUser.create({
+            email,
+            name,
+            role: "admin",
+            status: "pending",
+            provider,
+        });
+        return res.status(403).json({ status: "pending" });
+    }
+    if (user.status !== "approved") {
+        return res.status(403).json({ status: "pending" });
+    }
+    const token = signAdminToken(user);
+    res.json({
+        token,
+        user: { id: user._id, email: user.email, role: user.role, name: user.name },
+    });
+});
+
+// Google OAuth
+router.get("/api/auth/google", (_req, res) => {
+    const redirectUri = getOAuthRedirectUrl("google", process.env.BACKEND_URL);
+    const query = new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID || "",
+        redirect_uri: redirectUri,
+        response_type: "code",
+        scope: "openid email profile",
+        access_type: "online",
+        prompt: "select_account",
+    });
+    res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${query}`);
+});
+
+router.get("/api/auth/google/callback", async (req, res) => {
+    const code = req.query.code;
+    const adminUrl = process.env.ADMIN_URL;
+    if (!code) {
+        return res.redirect(resolveAdminRedirect({ error: "missing_code" }, adminUrl));
+    }
+    const redirectUri = getOAuthRedirectUrl("google", process.env.BACKEND_URL);
+    try {
+        const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                code: String(code),
+                client_id: process.env.GOOGLE_CLIENT_ID || "",
+                client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
+                redirect_uri: redirectUri,
+                grant_type: "authorization_code",
+            }),
+        });
+        const tokenData = await tokenResponse.json();
+        if (!tokenResponse.ok) {
+            return res.redirect(resolveAdminRedirect({ error: "oauth_failed" }, adminUrl));
+        }
+        const userResponse = await fetch(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            {
+                headers: { Authorization: `Bearer ${tokenData.access_token}` },
+            }
+        );
+        const userData = await userResponse.json();
+        const email = String(userData.email || "").toLowerCase();
+        if (!email) {
+            return res.redirect(resolveAdminRedirect({ error: "missing_email" }, adminUrl));
+        }
+        const user = await upsertOAuthAdmin({
+            email,
+            name: userData.name || "",
+            provider: "google",
+        });
+        if (user.status !== "approved") {
+            return res.redirect(resolveAdminRedirect({ status: "pending" }, adminUrl));
+        }
+        const token = signAdminToken(user);
+        res.redirect(resolveAdminRedirect({ token }, adminUrl));
+    } catch (error) {
+        res.redirect(resolveAdminRedirect({ error: "oauth_error" }, adminUrl));
+    }
+});
+
+// LINE OAuth
+router.get("/api/auth/line", (_req, res) => {
+    const redirectUri = getOAuthRedirectUrl("line", process.env.BACKEND_URL);
+    const query = new URLSearchParams({
+        response_type: "code",
+        client_id: process.env.LINE_CLIENT_ID || "",
+        redirect_uri: redirectUri,
+        state: randomUUID(),
+        scope: "profile openid email",
+        prompt: "consent",
+    });
+    res.redirect(`https://access.line.me/oauth2/v2.1/authorize?${query}`);
+});
+
+router.get("/api/auth/line/callback", async (req, res) => {
+    const code = req.query.code;
+    const adminUrl = process.env.ADMIN_URL;
+    if (!code) {
+        return res.redirect(resolveAdminRedirect({ error: "missing_code" }, adminUrl));
+    }
+    const redirectUri = getOAuthRedirectUrl("line", process.env.BACKEND_URL);
+    try {
+        const tokenResponse = await fetch("https://api.line.me/oauth2/v2.1/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                grant_type: "authorization_code",
+                code: String(code),
+                redirect_uri: redirectUri,
+                client_id: process.env.LINE_CLIENT_ID || "",
+                client_secret: process.env.LINE_CLIENT_SECRET || "",
+            }),
+        });
+        const tokenData = await tokenResponse.json();
+        if (!tokenResponse.ok) {
+            return res.redirect(resolveAdminRedirect({ error: "oauth_failed" }, adminUrl));
+        }
+        const profileResponse = await fetch("https://api.line.me/v2/profile", {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        });
+        const profile = await profileResponse.json();
+        const lineId = profile.userId || profile.sub || randomUUID();
+        const email = `line-${lineId}@line.local`;
+        const user = await upsertOAuthAdmin({
+            email,
+            name: profile.displayName || "LINE User",
+            provider: "line",
+        });
+        if (user.status !== "approved") {
+            return res.redirect(resolveAdminRedirect({ status: "pending" }, adminUrl));
+        }
+        const token = signAdminToken(user);
+        res.redirect(resolveAdminRedirect({ token }, adminUrl));
+    } catch (error) {
+        res.redirect(resolveAdminRedirect({ error: "oauth_error" }, adminUrl));
+    }
+});
+
+// Admin Me
+router.get("/admin/me", requireAdmin, async (req, res) => {
+    const user = req.adminUser;
+    res.json({
+        user: {
+            id: user._id,
+            email: user.email,
+            role: user.role,
+            name: user.name,
+            avatar: user.avatar,
+            provider: user.provider,
+        },
+    });
+});
+
+router.patch("/admin/me", requireAdmin, async (req, res) => {
+    const patch = {
+        name: req.body?.name,
+        avatar: req.body?.avatar,
+    };
+    const user = await AdminUser.findByIdAndUpdate(
+        req.adminUser._id,
+        { $set: patch },
+        { new: true }
+    ).lean();
+    res.json({
+        user: {
+            id: user._id,
+            email: user.email,
+            role: user.role,
+            name: user.name,
+            avatar: user.avatar,
+            provider: user.provider,
+        },
+    });
+});
+
+module.exports = router;
