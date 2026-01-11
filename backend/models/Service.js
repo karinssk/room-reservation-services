@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 
 const serviceSchema = new mongoose.Schema(
     {
-        title: { type: String, required: true },
+        // Title supports both string (legacy) and multi-language object
+        title: { type: mongoose.Schema.Types.Mixed, required: true },
         slug: { type: String, required: true, unique: true, index: true },
         status: { type: String, default: "draft", index: true },
         categoryId: {
@@ -10,8 +11,10 @@ const serviceSchema = new mongoose.Schema(
             ref: "ServiceCategory",
             default: null,
         },
-        price: { type: String, default: "" },
-        shortDescription: { type: String, default: "" },
+        // Price supports multi-language
+        price: { type: mongoose.Schema.Types.Mixed, default: "" },
+        // Short description supports multi-language
+        shortDescription: { type: mongoose.Schema.Types.Mixed, default: "" },
         rating: { type: Number, default: 0 },
         reviewCount: { type: Number, default: 0 },
         coverImage: { type: String, default: "" },
@@ -19,8 +22,9 @@ const serviceSchema = new mongoose.Schema(
         videos: { type: [String], default: [] },
         content: { type: Object, default: {} },
         seo: {
-            title: { type: String, default: "" },
-            description: { type: String, default: "" },
+            // SEO fields support multi-language
+            title: { type: mongoose.Schema.Types.Mixed, default: "" },
+            description: { type: mongoose.Schema.Types.Mixed, default: "" },
             image: { type: String, default: "" },
         },
         publishedAt: { type: Date, default: null },

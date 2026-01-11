@@ -4,6 +4,28 @@ const Service = require("../models/Service");
 const ServiceCategory = require("../models/ServiceCategory");
 const { normalizeUploadPath, normalizeUploadsDeep } = require("../utils/helpers");
 
+// Helper function to extract language-specific string
+function getLangString(value, locale) {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    return value[locale] || value.th || value.en || "";
+}
+
+// Helper function to localize service data
+function localizeService(service, locale) {
+    return {
+        ...service,
+        title: getLangString(service.title, locale),
+        price: getLangString(service.price, locale),
+        shortDescription: getLangString(service.shortDescription, locale),
+        seo: {
+            title: getLangString(service.seo?.title, locale),
+            description: getLangString(service.seo?.description, locale),
+            image: service.seo?.image || "",
+        },
+    };
+}
+
 // Categories
 router.get("/service-categories", async (_req, res) => {
     const categories = await ServiceCategory.find({})
@@ -74,6 +96,9 @@ router.delete("/service-categories/:id", async (req, res) => {
 
 // Services
 router.get("/services", async (req, res) => {
+    const locale = req.query.locale; // frontend: ?locale=th or ?locale=en
+    const isAdmin = !locale; // If no locale, assume admin mode
+
     const filter = {};
     if (req.query.status) {
         filter.status = req.query.status;
@@ -100,8 +125,9 @@ router.get("/services", async (req, res) => {
         .populate("categoryId")
         .sort({ updatedAt: -1 })
         .lean();
-    res.json({
-        services: services.map((service) => ({
+
+    const mappedServices = services.map((service) => {
+        const baseService = {
             id: service._id,
             title: service.title,
             slug: service.slug,
@@ -124,13 +150,27 @@ router.get("/services", async (req, res) => {
             publishedAt: service.publishedAt,
             createdAt: service.createdAt,
             updatedAt: service.updatedAt,
-        })),
+        };
+
+        // If admin mode, return full data. Otherwise, localize.
+        return isAdmin ? baseService : localizeService(baseService, locale);
     });
+
+    res.json({ services: mappedServices });
 });
 
 router.get("/services/:slug", async (req, res) => {
     const preview = req.query.preview === "1";
-    const query = { slug: req.params.slug };
+    const locale = req.query.locale;
+    const isAdmin = preview || !locale;
+
+    // Check if the parameter is a MongoDB ObjectId (24 hex characters)
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(req.params.slug);
+
+    const query = isObjectId
+        ? { _id: req.params.slug }
+        : { slug: req.params.slug };
+
     if (!preview) {
         query.status = "published";
     }
@@ -138,19 +178,25 @@ router.get("/services/:slug", async (req, res) => {
     if (!service) {
         return res.status(404).json({ error: "Service not found" });
     }
-    res.json({
-        service: {
-            ...service,
-            id: service._id,
-            category: service.categoryId
-                ? {
-                    id: service.categoryId._id,
-                    name: service.categoryId.name,
-                    slug: service.categoryId.slug,
-                }
-                : null,
-        },
-    });
+
+    let serviceData = {
+        ...service,
+        id: service._id,
+        category: service.categoryId
+            ? {
+                id: service.categoryId._id,
+                name: service.categoryId.name,
+                slug: service.categoryId.slug,
+            }
+            : null,
+    };
+
+    // If not admin and locale is provided, localize the service
+    if (!isAdmin && locale) {
+        serviceData = localizeService(serviceData, locale);
+    }
+
+    res.json({ service: serviceData });
 });
 
 router.post("/services", async (req, res) => {

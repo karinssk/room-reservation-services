@@ -207,6 +207,7 @@ router.get("/admin/me", requireAdmin, async (req, res) => {
             email: user.email,
             role: user.role,
             name: user.name,
+            color: user.color,
             avatar: user.avatar,
             provider: user.provider,
         },
@@ -217,6 +218,7 @@ router.patch("/admin/me", requireAdmin, async (req, res) => {
     const patch = {
         name: req.body?.name,
         avatar: req.body?.avatar,
+        color: req.body?.color,
     };
     const user = await AdminUser.findByIdAndUpdate(
         req.adminUser._id,
@@ -229,10 +231,171 @@ router.patch("/admin/me", requireAdmin, async (req, res) => {
             email: user.email,
             role: user.role,
             name: user.name,
+            color: user.color,
             avatar: user.avatar,
             provider: user.provider,
         },
     });
+});
+
+// Customer Google OAuth
+router.get("/auth/google", (_req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const redirectUri = `${process.env.BACKEND_URL}/auth/google/callback`;
+    const query = new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID || "",
+        redirect_uri: redirectUri,
+        response_type: "code",
+        scope: "openid email profile",
+        access_type: "online",
+        prompt: "select_account",
+        state: Buffer.from(JSON.stringify({ returnUrl: frontendUrl })).toString('base64')
+    });
+    res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${query}`);
+});
+
+router.get("/auth/google/callback", async (req, res) => {
+    const code = req.query.code;
+    const state = req.query.state;
+    let returnUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+    try {
+        if (state) {
+            const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+            returnUrl = decoded.returnUrl || returnUrl;
+        }
+    } catch (e) {
+        console.error("Failed to decode state", e);
+    }
+
+    if (!code) {
+        return res.redirect(`${returnUrl}?auth_error=missing_code`);
+    }
+
+    const redirectUri = `${process.env.BACKEND_URL}/auth/google/callback`;
+
+    try {
+        const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                code: String(code),
+                client_id: process.env.GOOGLE_CLIENT_ID || "",
+                client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
+                redirect_uri: redirectUri,
+                grant_type: "authorization_code",
+            }),
+        });
+
+        const tokenData = await tokenResponse.json();
+        if (!tokenResponse.ok) {
+            return res.redirect(`${returnUrl}?auth_error=oauth_failed`);
+        }
+
+        const userResponse = await fetch(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            {
+                headers: { Authorization: `Bearer ${tokenData.access_token}` },
+            }
+        );
+        const userData = await userResponse.json();
+        const email = String(userData.email || "").toLowerCase();
+        const name = userData.name || "";
+
+        if (!email) {
+            return res.redirect(`${returnUrl}?auth_error=missing_email`);
+        }
+
+        // Store customer auth in session/cookie or return as query params
+        const authData = Buffer.from(JSON.stringify({
+            provider: "google",
+            email,
+            name,
+            picture: userData.picture
+        })).toString('base64');
+
+        res.redirect(`${returnUrl}?auth_success=true&auth_data=${authData}`);
+    } catch (error) {
+        console.error("Google OAuth error:", error);
+        res.redirect(`${returnUrl}?auth_error=oauth_error`);
+    }
+});
+
+// Customer LINE OAuth
+router.get("/auth/line", (_req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const redirectUri = `${process.env.BACKEND_URL}/auth/line/callback`;
+    const query = new URLSearchParams({
+        response_type: "code",
+        client_id: process.env.LINE_CLIENT_ID || "",
+        redirect_uri: redirectUri,
+        state: Buffer.from(JSON.stringify({ returnUrl: frontendUrl })).toString('base64'),
+        scope: "profile openid email",
+        prompt: "consent",
+    });
+    res.redirect(`https://access.line.me/oauth2/v2.1/authorize?${query}`);
+});
+
+router.get("/auth/line/callback", async (req, res) => {
+    const code = req.query.code;
+    const state = req.query.state;
+    let returnUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+    try {
+        if (state) {
+            const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+            returnUrl = decoded.returnUrl || returnUrl;
+        }
+    } catch (e) {
+        console.error("Failed to decode state", e);
+    }
+
+    if (!code) {
+        return res.redirect(`${returnUrl}?auth_error=missing_code`);
+    }
+
+    const redirectUri = `${process.env.BACKEND_URL}/auth/line/callback`;
+
+    try {
+        const tokenResponse = await fetch("https://api.line.me/oauth2/v2.1/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                grant_type: "authorization_code",
+                code: String(code),
+                redirect_uri: redirectUri,
+                client_id: process.env.LINE_CLIENT_ID || "",
+                client_secret: process.env.LINE_CLIENT_SECRET || "",
+            }),
+        });
+
+        const tokenData = await tokenResponse.json();
+        if (!tokenResponse.ok) {
+            return res.redirect(`${returnUrl}?auth_error=oauth_failed`);
+        }
+
+        const profileResponse = await fetch("https://api.line.me/v2/profile", {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        });
+        const profile = await profileResponse.json();
+
+        const lineUserId = profile.userId;
+        const displayName = profile.displayName || "LINE User";
+        const pictureUrl = profile.pictureUrl;
+
+        // Store customer auth
+        const authData = Buffer.from(JSON.stringify({
+            provider: "line",
+            lineUserId,
+            name: displayName,
+            picture: pictureUrl
+        })).toString('base64');
+
+        res.redirect(`${returnUrl}?auth_success=true&auth_data=${authData}`);
+    } catch (error) {
+        console.error("LINE OAuth error:", error);
+        res.redirect(`${returnUrl}?auth_error=oauth_error`);
+    }
 });
 
 module.exports = router;

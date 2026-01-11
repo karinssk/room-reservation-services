@@ -15,8 +15,14 @@ const uploadStorage = multer.diskStorage({
     },
 });
 
-const upload = multer({
-    storage: uploadStorage,
+const createUpload = ({ fileFilter, limits } = {}) =>
+    multer({
+        storage: uploadStorage,
+        fileFilter,
+        limits,
+    });
+
+const upload = createUpload({
     fileFilter: (_req, file, cb) => {
         if (file.mimetype && file.mimetype.startsWith("image/")) {
             cb(null, true);
@@ -30,4 +36,5 @@ const upload = multer({
 module.exports = {
     uploadsDir,
     upload,
+    createUpload,
 };

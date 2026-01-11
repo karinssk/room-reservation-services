@@ -6,6 +6,7 @@ const adminMenuItemSchema = new mongoose.Schema(
         label: { type: String, required: true },
         href: { type: String, default: "" },
         icon: { type: String, default: "" },
+        permission: { type: String, default: "everyone" },
         children: { type: [Object], default: [] },
     },
     { _id: false }

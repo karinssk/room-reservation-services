@@ -27,8 +27,10 @@ const BACKEND_URL = resolveBaseUrl(
 const allowedOrigins = [
   FRONTEND_URL,
   ADMIN_URL,
-  "https://rca-aircon-express.fastforwardssl.com",
-  "https://admin-rca-aircon-express.fastforwardssl.com",
+  "https://the-wang-yaowarat.fastforwardssl.com",
+  "https://admin-the-wang-yaowarat.fastforwardssl.com",
+  "http://localhost:5001",
+  "http://localhost:5002",
 ].filter(Boolean);
 
 const corsOptions = {
@@ -62,6 +64,12 @@ app.use("/pages", require("./routes/pages"));
 app.use("/posts", require("./routes/posts"));
 app.use("/uploads", require("./routes/uploads"));
 app.use("/chat", require("./routes/chat")(io, adminPresence));
+app.use("/api/calendar", require("./routes/calendar")(io));
+app.use("/api", require("./routes/sheets"));
+// New booking system routes
+app.use("/", require("./routes/rooms"));
+app.use("/", require("./routes/bookings"));
+app.use("/", require("./routes/promoCodes"));
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, db: mongoose.connection.readyState });
@@ -70,7 +78,7 @@ app.get("/health", (_req, res) => {
 // Socket.IO
 initSocket(io, adminPresence);
 
-const port = process.env.PORT || 4022;
+const port = process.env.PORT || 5003;
 
 mongoose
   .connect(process.env.MONGO_URI)

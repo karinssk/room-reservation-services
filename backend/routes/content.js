@@ -6,12 +6,32 @@ const AdminMenu = require("../models/AdminMenu");
 const Footer = require("../models/Footer");
 const QuickLinks = require("../models/QuickLinks");
 
+// Helper function to extract language-specific string
+function getLangString(value, locale) {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    return value[locale] || value.th || value.en || "";
+}
+
+// Helper function to extract language-specific menu items recursively
+function extractLocaleMenu(items, locale) {
+    return items.map(item => ({
+        ...item,
+        label: getLangString(item.label, locale),
+        children: item.children ? extractLocaleMenu(item.children, locale) : undefined
+    }));
+}
+
 // Menu
-router.get("/menu", async (_req, res) => {
+router.get("/menu", async (req, res) => {
+    const locale = req.query.locale; // frontend: ?locale=th or ?locale=en
+    const isAdmin = req.query.admin === "1"; // admin: ?admin=1
+
     let menu = await Menu.findOne({ name: "main" }).lean();
     if (!menu) {
         menu = {
             name: "main",
+            logoUrl: "",
             items: [
                 { id: randomUUID(), label: "Home", href: "/" },
                 {
@@ -33,15 +53,41 @@ router.get("/menu", async (_req, res) => {
         };
         await Menu.create(menu);
     }
-    res.json({ menu });
+
+    // If admin mode, return full multi-language data
+    if (isAdmin) {
+        return res.json({ menu });
+    }
+
+    // Otherwise, return locale-specific data for frontend
+    const targetLocale = locale || "th";
+    const localizedMenu = {
+        ...menu,
+        items: extractLocaleMenu(menu.items, targetLocale),
+        cta: menu.cta ? {
+            label: getLangString(menu.cta.label, targetLocale),
+            href: menu.cta.href
+        } : undefined,
+        contactBar: menu.contactBar ? {
+            ...menu.contactBar,
+            items: menu.contactBar.items.map(item => ({
+                ...item,
+                text: getLangString(item.text, targetLocale)
+            }))
+        } : undefined
+    };
+
+    res.json({ menu: localizedMenu });
 });
 
 router.put("/menu", async (req, res) => {
     const items = req.body?.items || [];
     const cta = req.body?.cta || undefined;
+    const logoUrl = req.body?.logoUrl;
+    const contactBar = req.body?.contactBar || undefined;
     const menu = await Menu.findOneAndUpdate(
         { name: "main" },
-        { $set: { items, ...(cta ? { cta } : {}) } },
+        { $set: { items, ...(cta ? { cta } : {}), ...(logoUrl !== undefined ? { logoUrl } : {}), ...(contactBar !== undefined ? { contactBar } : {}) } },
         { new: true, upsert: true }
     ).lean();
     res.json({ menu });
@@ -54,27 +100,27 @@ router.get("/admin-menu", async (_req, res) => {
         menu = {
             name: "main",
             items: [
-                { id: randomUUID(), label: "Overview", href: "/" },
-                { id: randomUUID(), label: "Pages", href: "/pages" },
-                { id: randomUUID(), label: "Blog", href: "/blog" },
-                { id: randomUUID(), label: "Services", href: "/services" },
-                { id: randomUUID(), label: "Products", href: "/products" },
+                { id: randomUUID(), label: "Overview", href: "/", permission: "everyone" },
+                { id: randomUUID(), label: "Pages", href: "/pages", permission: "everyone" },
+                { id: randomUUID(), label: "Blog", href: "/blog", permission: "everyone" },
+                { id: randomUUID(), label: "Services", href: "/services", permission: "everyone" },
+                { id: randomUUID(), label: "Products", href: "/products", permission: "everyone" },
                 {
                     id: randomUUID(),
                     label: "Settings",
                     href: "",
                     children: [
-                        { id: randomUUID(), label: "Navbar", href: "/menu" },
-                        { id: randomUUID(), label: "Footer", href: "/footer" },
-                        { id: randomUUID(), label: "Quick Links", href: "/quick-links" },
-                        { id: randomUUID(), label: "Admin Menu", href: "/admin-menu" },
-                        { id: randomUUID(), label: "Profile", href: "/profile" },
-                        { id: randomUUID(), label: "Admin Approvals", href: "/admin-users" },
+                        { id: randomUUID(), label: "Navbar", href: "/menu", permission: "everyone" },
+                        { id: randomUUID(), label: "Footer", href: "/footer", permission: "everyone" },
+                        { id: randomUUID(), label: "Quick Links", href: "/quick-links", permission: "everyone" },
+                        { id: randomUUID(), label: "Admin Menu", href: "/admin-menu", permission: "owner-only" },
+                        { id: randomUUID(), label: "Profile", href: "/profile", permission: "everyone" },
+                        { id: randomUUID(), label: "Admin Approvals", href: "/admin-users", permission: "owner-only" },
                     ],
                 },
-                { id: randomUUID(), label: "Forms Submitted", href: "/forms-submitted" },
-                { id: randomUUID(), label: "Media", href: "/media" },
-                { id: randomUUID(), label: "Chat", href: "/" },
+                { id: randomUUID(), label: "Forms Submitted", href: "/forms-submitted", permission: "everyone" },
+                { id: randomUUID(), label: "Media", href: "/media", permission: "everyone" },
+                { id: randomUUID(), label: "Chat", href: "/chat", permission: "everyone" },
             ],
         };
         await AdminMenu.create(menu);

@@ -10,18 +10,31 @@ const pageBlockSchema = new mongoose.Schema(
 
 const pageSchema = new mongoose.Schema(
     {
-        title: { type: String, required: true },
+        title: {
+            th: { type: String, required: true },
+            en: { type: String, default: "" }
+        },
         slug: { type: String, required: true, unique: true, index: true },
         status: { type: String, default: "draft", index: true },
         seo: {
-            title: { type: String, default: "" },
-            description: { type: String, default: "" },
+            title: {
+                th: { type: String, default: "" },
+                en: { type: String, default: "" }
+            },
+            description: {
+                th: { type: String, default: "" },
+                en: { type: String, default: "" }
+            },
             image: { type: String, default: "" },
         },
         theme: {
             background: { type: String, default: "" },
         },
-        layout: { type: [pageBlockSchema], default: [] },
+        // Layout supports both formats: language-specific or legacy
+        layout: {
+            type: mongoose.Schema.Types.Mixed,
+            default: { th: [], en: [] }
+        },
     },
     { timestamps: true, versionKey: false }
 );

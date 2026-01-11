@@ -1,8 +1,53 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Product = require("../models/Product");
 const ProductCategory = require("../models/ProductCategory");
 const { normalizeUploadPath, normalizeUploadsDeep } = require("../utils/helpers");
+
+// Helper function to extract language-specific string
+function getLangString(value, locale) {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    return value[locale] || value.th || value.en || "";
+}
+
+// Helper function to extract language-specific array items
+function getLangArray(arr, locale) {
+    if (!Array.isArray(arr)) return [];
+    return arr.map(item => getLangString(item, locale));
+}
+
+// Helper function to extract language-specific features (Map)
+function getLangFeatures(features, locale) {
+    if (!features) return {};
+    const result = {};
+    for (const [key, value] of Object.entries(features)) {
+        result[key] = getLangString(value, locale);
+    }
+    return result;
+}
+
+// Helper function to localize product data
+function localizeProduct(product, locale) {
+    return {
+        ...product,
+        name: getLangString(product.name, locale),
+        description: product.description, // Keep as-is, frontend handles this
+        features: getLangFeatures(product.features, locale),
+        highlights: getLangArray(product.highlights, locale),
+        warranty: {
+            device: getLangString(product.warranty?.device, locale),
+            compressor: getLangString(product.warranty?.compressor, locale),
+        },
+        inBox: getLangArray(product.inBox, locale),
+        seo: {
+            title: getLangString(product.seo?.title, locale),
+            description: getLangString(product.seo?.description, locale),
+            image: product.seo?.image || "",
+        },
+    };
+}
 
 // Categories
 router.get("/product-categories", async (_req, res) => {
@@ -126,7 +171,12 @@ router.get("/products", async (req, res) => {
 
 router.get("/products/:slug", async (req, res) => {
     const preview = req.query.preview === "1";
-    const query = { slug: req.params.slug };
+    const locale = req.query.locale; // frontend: ?locale=th or ?locale=en
+    const isAdmin = preview; // If preview mode, return full data for admin
+
+    const slugOrId = req.params.slug;
+    const isObjectId = mongoose.isValidObjectId(slugOrId);
+    const query = isObjectId ? { _id: slugOrId } : { slug: slugOrId };
     if (!preview) {
         query.status = "published";
     }
@@ -134,15 +184,21 @@ router.get("/products/:slug", async (req, res) => {
     if (!p) {
         return res.status(404).json({ error: "Product not found" });
     }
-    res.json({
-        product: {
-            ...p,
-            id: p._id,
-            category: p.categoryId
-                ? { id: p.categoryId._id, name: p.categoryId.name, slug: p.categoryId.slug }
-                : null,
-        },
-    });
+
+    let product = {
+        ...p,
+        id: p._id,
+        category: p.categoryId
+            ? { id: p.categoryId._id, name: p.categoryId.name, slug: p.categoryId.slug }
+            : null,
+    };
+
+    // If not admin and locale is provided, localize the product
+    if (!isAdmin && locale) {
+        product = localizeProduct(product, locale);
+    }
+
+    res.json({ product });
 });
 
 router.post("/products", async (req, res) => {
@@ -165,6 +221,12 @@ router.post("/products", async (req, res) => {
                 ? req.body.images.map((item) => normalizeUploadPath(item))
                 : [],
             seo: req.body?.seo || { title: "", description: "", image: "" },
+            compareTable: req.body?.compareTable || {
+                heading: "",
+                subheading: "",
+                columns: [],
+                rows: [],
+            },
         };
         if (!payload.name || !payload.slug) {
             return res.status(400).json({ error: "Name and slug are required" });

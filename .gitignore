@@ -36,3 +36,11 @@ yarn-error.log*
 
 # backend uploads (runtime assets)
 /backend/uploads
+
+# local editor/tooling
+/.vscode
+/.claude
+
+# credential files (keep out of repo)
+/calendar____client_secret_160229911098-93shu8dh32hklgfr5993hi7qntadj80t.apps.googleusercontent.com.json
+/project001-68cf6-4946d2b24457.json
