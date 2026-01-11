@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "title": "RCA Aircon Express | Professional Air Conditioning Services",
+    "siteName": "RCA Aircon Express",
+    "description": "Professional air conditioning cleaning, repair, and installation services. Quick appointments, trained technicians, service guarantee.",
+    "keywords": "air conditioning service, AC repair, AC installation, annual AC maintenance, AC technician near me, RCA Aircon Express, air conditioner cleaning"
+  },
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "products": "Products",
+    "about": "About Us",
+    "contact": "Contact",
+    "blog": "Blog",
+    "calendar": "Calendar"
+  },
+  "common": {
+    "learnMore": "Learn More",
+    "contactUs": "Contact Us",
+    "requestQuote": "Request Quote",
+    "readMore": "Read More",
+    "viewAll": "View All",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loading": "Loading...",
+    "search": "Search",
+    "language": "Language"
+  },
+  "hero": {
+    "title": "Professional Air Conditioning Services",
+    "subtitle": "Expert Installation, Maintenance & Repair",
+    "cta": "Get Started"
+  },
+  "services": {
+    "title": "Our Services",
+    "subtitle": "Complete air conditioning solutions for your needs",
+    "installation": "Installation",
+    "maintenance": "Maintenance",
+    "repair": "Repair",
+    "cleaning": "Cleaning"
+  },
+  "products": {
+    "title": "Our Products",
+    "subtitle": "High-quality air conditioning units",
+    "viewDetails": "View Details",
+    "addToCart": "Add to Cart",
+    "price": "Price",
+    "contact": "Contact for Price"
+  },
+  "about": {
+    "title": "About Us",
+    "subtitle": "Your trusted air conditioning experts",
+    "experience": "Years of Experience",
+    "customers": "Happy Customers",
+    "projects": "Completed Projects"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Get in touch with us",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "message": "Message",
+    "sendMessage": "Send Message",
+    "address": "Address",
+    "workingHours": "Working Hours"
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "followUs": "Follow Us",
+    "quickLinks": "Quick Links",
+    "contactInfo": "Contact Information"
+  },
+  "chat": {
+    "online": "Online",
+    "offline": "Offline",
+    "typeMessage": "Type a message...",
+    "send": "Send",
+    "startChat": "Start Chat"
+  }
+}

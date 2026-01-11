@@ -1,0 +1,190 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Navbar from "../../../components/Navbar";
+import Footer from "../../../components/Footer";
+import ChatWidget from "../../../components/ChatWidget";
+import { backendBaseUrl, frontendBaseUrl, resolveUploadUrl } from "@/lib/urls";
+
+type ServiceCategory = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+type ServiceSummary = {
+  id: string;
+  title: string;
+  slug: string;
+  price?: string;
+  shortDescription?: string;
+  coverImage?: string;
+  rating?: number;
+  reviewCount?: number;
+  category?: { id: string; name: string; slug: string } | null;
+};
+
+async function fetchCategories(): Promise<ServiceCategory[]> {
+  try {
+    const response = await fetch(`${backendBaseUrl}/service-categories`, {
+      cache: "no-store",
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.categories || [];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchServices(): Promise<ServiceSummary[]> {
+  try {
+    const response = await fetch(
+      `${backendBaseUrl}/services?status=published`,
+      { cache: "no-store" }
+    );
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.services || [];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchMenu() {
+  try {
+    const response = await fetch(`${backendBaseUrl}/menu`, { cache: "no-store" });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.menu || null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchFooter() {
+  try {
+    const response = await fetch(`${backendBaseUrl}/footer`, { cache: "no-store" });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.footer || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const categories = await fetchCategories();
+  const category = categories.find((item) => item.slug === slug);
+  if (!category) return {};
+  const title = `${category.name} | บริการของเรา`;
+  const canonical = frontendBaseUrl
+    ? `${frontendBaseUrl}/services/category/${category.slug}`
+    : `/services/category/${category.slug}`;
+  return {
+    title,
+    description: `รวมบริการหมวดหมู่ ${category.name}`,
+    alternates: { canonical },
+  };
+}
+
+export default async function ServicesByCategory({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const [categories, services, menu, footer] = await Promise.all([
+    fetchCategories(),
+    fetchServices(),
+    fetchMenu(),
+    fetchFooter(),
+  ]);
+  const category = categories.find((item) => item.slug === slug);
+  if (!category) return notFound();
+  const filteredServices = services.filter(
+    (service) => service.category?.slug === category.slug
+  );
+
+  return (
+    <div>
+      <Navbar items={menu?.items || []} cta={menu?.cta} logoUrl={menu?.logoUrl} />
+      <section className="bg-slate-50 py-12">
+        <div className="mx-auto max-w-6xl px-6">
+          <nav className="text-xs text-slate-400">
+            หน้าแรก &gt; บริการของเรา &gt; {category.name}
+          </nav>
+          <div className="mt-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold text-[var(--brand-navy)]">
+                {category.name}
+              </h1>
+              <p className="mt-2 text-sm text-slate-600">
+                {filteredServices.length} บริการในหมวดหมู่นี้
+              </p>
+            </div>
+            <a
+              href="/services"
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600"
+            >
+              ดูบริการทั้งหมด
+            </a>
+          </div>
+
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredServices.map((service) => (
+              <a
+                key={service.id}
+                href={`/services/${service.slug}`}
+                className="rounded-3xl bg-white p-4 shadow-xl shadow-blue-900/10 transition hover:-translate-y-1"
+              >
+                <div className="h-48 overflow-hidden rounded-2xl bg-slate-100">
+                  {service.coverImage ? (
+                    <img
+                      src={resolveUploadUrl(service.coverImage)}
+                      alt={service.title}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                      No image
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4">
+                  <h2 className="text-lg font-semibold text-[var(--brand-navy)]">
+                    {service.title}
+                  </h2>
+                  {service.shortDescription && (
+                    <p className="mt-2 text-sm text-slate-600 line-clamp-2">
+                      {service.shortDescription}
+                    </p>
+                  )}
+                  <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
+                    <span className="font-semibold text-[var(--brand-blue)]">
+                      {service.price || "สอบถามราคา"}
+                    </span>
+                    <span className="text-xs text-amber-500">
+                      {"★".repeat(Math.round(service.rating || 0))}
+                    </span>
+                  </div>
+                </div>
+              </a>
+            ))}
+            {filteredServices.length === 0 && (
+              <p className="text-sm text-slate-500">
+                ยังไม่มีบริการในหมวดนี้
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+      {footer && <Footer footer={footer} />}
+      <ChatWidget />
+    </div>
+  );
+}
