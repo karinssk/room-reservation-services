@@ -59,6 +59,8 @@ const bookingSchema = new mongoose.Schema(
             enum: ["unpaid", "partial", "paid", "refunded"],
         },
         paymentMethod: { type: String, default: "" },
+        paymentProvider: { type: String, default: "" },
+        paymentReference: { type: String, default: "" },
 
         // Additional Information
         specialRequests: { type: String, default: "" },
@@ -79,8 +81,8 @@ bookingSchema.index({ checkInDate: 1, checkOutDate: 1 });
 bookingSchema.index({ roomTypeId: 1, status: 1 });
 bookingSchema.index({ guestEmail: 1, createdAt: -1 });
 
-// Generate booking number before saving
-bookingSchema.pre("save", async function (next) {
+// Generate booking number before validation so required check passes
+bookingSchema.pre("validate", async function (next) {
     if (!this.bookingNumber) {
         const date = new Date();
         const year = date.getFullYear();

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Navbar from "../../components/Navbar";
-import Footer from "../../components/Footer";
-import ChatWidget from "../../components/ChatWidget";
-import BlogContent from "../../components/BlogContent";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
+import ChatWidget from "@/app/components/ChatWidget";
+import BlogContent from "@/app/components/BlogContent";
 import { backendBaseUrl, frontendBaseUrl, resolveUploadUrl } from "@/lib/urls";
 
 type Post = {

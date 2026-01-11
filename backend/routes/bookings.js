@@ -5,6 +5,14 @@ const Room = require("../models/Room");
 const IndividualRoom = require("../models/IndividualRoom");
 const PromoCode = require("../models/PromoCode");
 const { createBookingEvent, updateBookingEvent, deleteBookingEvent } = require("../utils/calendarHelpers");
+const { sendBookingConfirmation, sendBookingCancellation } = require("../utils/emailService");
+
+// Helper function to extract language-specific string
+function getLangString(value, locale) {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    return value[locale] || value.th || value.en || "";
+}
 
 // Helper function to calculate nights between dates
 function calculateNights(checkIn, checkOut) {
@@ -233,6 +241,12 @@ router.post("/validate-promo", async (req, res) => {
 // Create a new booking (PUBLIC + ADMIN)
 router.post("/bookings", async (req, res) => {
     try {
+        console.log("[bookings] POST /bookings", {
+            roomTypeId: req.body?.roomTypeId,
+            checkInDate: req.body?.checkInDate,
+            checkOutDate: req.body?.checkOutDate,
+            guestEmail: req.body?.guestEmail,
+        });
         const {
             roomTypeId,
             individualRoomId,
@@ -331,6 +345,9 @@ router.post("/bookings", async (req, res) => {
             );
         }
 
+        const resolvedStatus = status || "pending";
+        const resolvedPaymentStatus = paymentStatus || "unpaid";
+
         // Create booking
         const booking = await Booking.create({
             roomTypeId,
@@ -347,8 +364,8 @@ router.post("/bookings", async (req, res) => {
             promoCodeId: promoCodeDoc?._id || null,
             discount,
             totalPrice,
-            status: status || "confirmed", // Admin can set status, default to confirmed
-            paymentStatus: paymentStatus || "unpaid", // Admin can set payment status
+            status: resolvedStatus, // Admin can set status, default to pending
+            paymentStatus: resolvedPaymentStatus, // Admin can set payment status
             specialRequests: specialRequests || "",
         });
 
@@ -382,8 +399,26 @@ router.post("/bookings", async (req, res) => {
             // Continue even if calendar creation fails
         }
 
-        // TODO: Send confirmation email
+        if (resolvedPaymentStatus === "paid") {
+            // Send confirmation email to customer only after payment is completed
+            try {
+                await sendBookingConfirmation(
+                    booking.toObject(),
+                    room,
+                    assignedIndividualRoom
+                );
+            } catch (emailError) {
+                console.error('Failed to send confirmation email:', emailError);
+                // Continue even if email fails - booking is still created
+            }
+        }
+
         // TODO: Send admin notification via Socket.io
+        console.log("[bookings] Created booking", {
+            bookingNumber: booking.bookingNumber,
+            status: booking.status,
+            paymentStatus: booking.paymentStatus,
+        });
 
         res.status(201).json({
             booking: {
@@ -422,6 +457,11 @@ router.post("/bookings", async (req, res) => {
 // Get booking by booking number (PUBLIC - for guest lookup)
 router.get("/bookings/lookup/:bookingNumber", async (req, res) => {
     try {
+        console.log("[bookings] GET /bookings/lookup", {
+            bookingNumber: req.params.bookingNumber,
+            locale: req.query?.locale,
+        });
+        const locale = req.query.locale;
         const booking = await Booking.findOne({
             bookingNumber: req.params.bookingNumber,
         })
@@ -437,7 +477,9 @@ router.get("/bookings/lookup/:bookingNumber", async (req, res) => {
             booking: {
                 bookingNumber: booking.bookingNumber,
                 roomType: {
-                    name: booking.roomTypeId.name,
+                    name: locale
+                        ? getLangString(booking.roomTypeId.name, locale)
+                        : booking.roomTypeId.name,
                     coverImage: booking.roomTypeId.coverImage,
                 },
                 individualRoom: booking.individualRoomId
@@ -663,7 +705,8 @@ router.put("/bookings/:id", async (req, res) => {
         }
 
         // Handle cancellation
-        if (req.body.status === "cancelled" && !booking.cancelledAt) {
+        const wasCancelled = req.body.status === "cancelled" && !booking.cancelledAt;
+        if (wasCancelled) {
             booking.cancelledAt = new Date();
             booking.cancellationReason = req.body.cancellationReason || "";
         }
@@ -690,6 +733,20 @@ router.put("/bookings/:id", async (req, res) => {
                 );
             } catch (calError) {
                 console.error('Failed to update calendar event:', calError);
+            }
+        }
+
+        // Send cancellation email if booking was cancelled
+        if (wasCancelled) {
+            try {
+                const room = await Room.findById(booking.roomTypeId).lean();
+                await sendBookingCancellation(
+                    booking.toObject(),
+                    room,
+                    booking.cancellationReason
+                );
+            } catch (emailError) {
+                console.error('Failed to send cancellation email:', emailError);
             }
         }
 

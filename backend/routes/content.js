@@ -113,6 +113,7 @@ router.get("/admin-menu", async (_req, res) => {
                         { id: randomUUID(), label: "Navbar", href: "/menu", permission: "everyone" },
                         { id: randomUUID(), label: "Footer", href: "/footer", permission: "everyone" },
                         { id: randomUUID(), label: "Quick Links", href: "/quick-links", permission: "everyone" },
+                        { id: randomUUID(), label: "Payment Setting", href: "/payment-setting", permission: "everyone" },
                         { id: randomUUID(), label: "Admin Menu", href: "/admin-menu", permission: "owner-only" },
                         { id: randomUUID(), label: "Profile", href: "/profile", permission: "everyone" },
                         { id: randomUUID(), label: "Admin Approvals", href: "/admin-users", permission: "owner-only" },

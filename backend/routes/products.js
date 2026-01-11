@@ -122,6 +122,9 @@ router.delete("/product-categories/:id", async (req, res) => {
 
 // Products
 router.get("/products", async (req, res) => {
+    const locale = req.query.locale; // frontend: ?locale=th or ?locale=en
+    const isAdmin = !locale; // If no locale, assume admin mode
+
     const filter = {};
     if (req.query.status) {
         filter.status = req.query.status;
@@ -151,8 +154,8 @@ router.get("/products", async (req, res) => {
         .sort({ updatedAt: -1 })
         .lean();
 
-    res.json({
-        products: products.map((p) => ({
+    const mappedProducts = products.map((p) => {
+        const baseProduct = {
             id: p._id,
             name: p.name,
             slug: p.slug,
@@ -165,8 +168,12 @@ router.get("/products", async (req, res) => {
             price: p.price,
             images: p.images,
             updatedAt: p.updatedAt,
-        })),
+        };
+
+        return isAdmin ? baseProduct : { ...baseProduct, name: getLangString(p.name, locale) };
     });
+
+    res.json({ products: mappedProducts });
 });
 
 router.get("/products/:slug", async (req, res) => {

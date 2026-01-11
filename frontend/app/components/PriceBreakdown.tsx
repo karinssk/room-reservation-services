@@ -15,6 +15,11 @@ export default function PriceBreakdown({
   nights,
   promoCode,
 }: PriceBreakdownProps) {
+  const safeRoomPrice = Number.isFinite(roomPrice) ? roomPrice : 0;
+  const safeDiscount = Number.isFinite(discount) ? discount : 0;
+  const safeTotal = Number.isFinite(totalPrice) ? totalPrice : 0;
+  const safeNights = Number.isFinite(nights) ? nights : 0;
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
       <h3 className="mb-4 text-lg font-bold text-slate-900">Price Breakdown</h3>
@@ -23,21 +28,21 @@ export default function PriceBreakdown({
         {/* Room price */}
         <div className="flex justify-between text-sm">
           <span className="text-slate-600">
-            Room price × {nights} {nights === 1 ? "night" : "nights"}
+            Room price × {safeNights} {safeNights === 1 ? "night" : "nights"}
           </span>
           <span className="font-semibold text-slate-900">
-            ฿{roomPrice.toLocaleString()}
+            ฿{safeRoomPrice.toLocaleString()}
           </span>
         </div>
 
         {/* Discount */}
-        {discount > 0 && (
+        {safeDiscount > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-slate-600">
               Discount {promoCode && `(${promoCode})`}
             </span>
             <span className="font-semibold text-green-600">
-              -฿{discount.toLocaleString()}
+              -฿{safeDiscount.toLocaleString()}
             </span>
           </div>
         )}
@@ -47,7 +52,7 @@ export default function PriceBreakdown({
           <div className="flex justify-between">
             <span className="text-base font-bold text-slate-900">Total</span>
             <span className="text-2xl font-bold text-blue-600">
-              ฿{totalPrice.toLocaleString()}
+              ฿{safeTotal.toLocaleString()}
             </span>
           </div>
         </div>

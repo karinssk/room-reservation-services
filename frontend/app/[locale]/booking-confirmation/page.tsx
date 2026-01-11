@@ -50,7 +50,9 @@ export default function BookingConfirmationPage() {
     if (!bookingNumber) return;
 
     try {
-      const res = await fetch(`${API_URL}/bookings/lookup/${bookingNumber}`);
+      const res = await fetch(
+        `${API_URL}/bookings/lookup/${bookingNumber}?locale=${locale}`
+      );
       if (!res.ok) {
         router.push(`/${locale}/rooms`);
         return;

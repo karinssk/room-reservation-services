@@ -27,14 +27,28 @@ const BACKEND_URL = resolveBaseUrl(
 const allowedOrigins = [
   FRONTEND_URL,
   ADMIN_URL,
+  BACKEND_URL,
   "https://the-wang-yaowarat.fastforwardssl.com",
   "https://admin-the-wang-yaowarat.fastforwardssl.com",
+  "https://api-the-wang-yaowarat.fastforwardssl.com",
   "http://localhost:5001",
   "http://localhost:5002",
 ].filter(Boolean);
 
+const fastForwardSslRegex = /^https?:\/\/([a-z0-9-]+)\.fastforwardssl\.com$/i;
+
 const corsOptions = {
-  origin: allowedOrigins.length ? allowedOrigins : true,
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    if (allowedOrigins.includes(origin) || fastForwardSslRegex.test(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
 };
 
@@ -70,6 +84,7 @@ app.use("/api", require("./routes/sheets"));
 app.use("/", require("./routes/rooms"));
 app.use("/", require("./routes/bookings"));
 app.use("/", require("./routes/promoCodes"));
+app.use("/", require("./routes/payments"));
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, db: mongoose.connection.readyState });

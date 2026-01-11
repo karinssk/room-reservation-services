@@ -47,6 +47,7 @@ const fallbackAdminMenu: MenuItem[] = [
       { id: "navbar", label: "Navbar", href: "/menu", permission: "everyone" },
       { id: "footer", label: "Footer", href: "/footer", permission: "everyone" },
       { id: "quick-links", label: "Quick Links", href: "/quick-links", permission: "everyone" },
+      { id: "payment-setting", label: "Payment Setting", href: "/payment-setting", permission: "everyone" },
       { id: "admin-menu", label: "Admin Menu", href: "/admin-menu", permission: "owner-only" },
       { id: "profile", label: "Profile", href: "/profile", permission: "everyone" },
       { id: "admin-users", label: "Admin Approvals", href: "/admin-users", permission: "owner-only" },
@@ -76,6 +77,7 @@ const iconMap: Record<string, string> = {
   "calendar-custom": "M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",
   profile: "M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zM6 20c0-3.3 2.7-6 6-6s6 2.7 6 6",
   "admin-users": "M7 9h10M7 13h10M7 17h6",
+  "payment-setting": "M5 12h14M12 5v14",
   settings: "M12 4l2 2 3-1 1 3 3 1-1 3 2 2-2 2 1 3-3 1-1 3-3-1-2 2-2-2-3 1-1-3-3-1 1-3-2-2 2-2-1-3 3-1 1-3 3 1z",
 };
 

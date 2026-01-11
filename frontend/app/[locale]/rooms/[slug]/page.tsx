@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { backendBaseUrl } from "@/lib/urls";
-import PriceBreakdown from "../../../components/PriceBreakdown";
 
 const API_URL = backendBaseUrl;
 
@@ -31,14 +30,6 @@ type Room = {
   };
 };
 
-type PromoCode = {
-  code: string;
-  name: string;
-  description: string;
-  discountType: "percentage" | "fixed";
-  discountValue: number;
-};
-
 export default function RoomDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -48,23 +39,11 @@ export default function RoomDetailPage() {
 
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string>("");
 
   // Dates from URL
   const checkIn = searchParams.get("checkIn") || new Date().toISOString().split("T")[0];
   const checkOut = searchParams.get("checkOut") || new Date(Date.now() + 86400000).toISOString().split("T")[0];
-
-  // Form state
-  const [guestName, setGuestName] = useState("");
-  const [guestEmail, setGuestEmail] = useState("");
-  const [guestPhone, setGuestPhone] = useState("");
-  const [numberOfGuests, setNumberOfGuests] = useState(1);
-  const [specialRequests, setSpecialRequests] = useState("");
-  const [promoCode, setPromoCode] = useState("");
-  const [promoValid, setPromoValid] = useState(false);
-  const [promoData, setPromoData] = useState<PromoCode | null>(null);
-  const [discount, setDiscount] = useState(0);
-  const [selectedImage, setSelectedImage] = useState<string>("");
 
   // Calculate nights
   const nights = Math.ceil(
@@ -74,7 +53,6 @@ export default function RoomDetailPage() {
 
   useEffect(() => {
     loadRoom();
-    loadDefaultPromo();
   }, [slug, locale]);
 
   // Set initial selected image when room loads
@@ -102,98 +80,8 @@ export default function RoomDetailPage() {
     }
   };
 
-  const loadDefaultPromo = async () => {
-    try {
-      const res = await fetch(`${API_URL}/default-promo`);
-      const data = await res.json();
-      if (data.promoCode) {
-        setPromoCode(data.promoCode.code);
-        await validatePromoCode(data.promoCode.code);
-      }
-    } catch (error) {
-      console.error("Failed to load default promo:", error);
-    }
-  };
-
-  const validatePromoCode = async (code: string) => {
-    if (!code || !room) return;
-
-    try {
-      const totalAmount = room.pricePerNight * nights;
-      const res = await fetch(`${API_URL}/validate-promo`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          roomTypeId: room.id,
-          nights,
-          totalAmount,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setPromoValid(true);
-        setPromoData(data.promoCode);
-        setDiscount(data.discount);
-      } else {
-        setPromoValid(false);
-        setPromoData(null);
-        setDiscount(0);
-      }
-    } catch (error) {
-      console.error("Failed to validate promo code:", error);
-      setPromoValid(false);
-      setDiscount(0);
-    }
-  };
-
-  const handlePromoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPromoCode(e.target.value.toUpperCase());
-  };
-
-  const handlePromoApply = () => {
-    validatePromoCode(promoCode);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!room) return;
-
-    setSubmitting(true);
-
-    try {
-      const res = await fetch(`${API_URL}/bookings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roomTypeId: room.id,
-          checkInDate: checkIn,
-          checkOutDate: checkOut,
-          guestName,
-          guestEmail,
-          guestPhone,
-          numberOfGuests,
-          promoCode: promoValid ? promoCode : "",
-          specialRequests,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        router.push(
-          `/${locale}/booking-confirmation?bookingNumber=${data.booking.bookingNumber}`
-        );
-      } else {
-        const error = await res.json();
-        alert(error.error || "Failed to create booking");
-      }
-    } catch (error) {
-      console.error("Error creating booking:", error);
-      alert("Failed to create booking");
-    } finally {
-      setSubmitting(false);
-    }
+  const handleBookNow = () => {
+    router.push(`/${locale}/booking/${slug}?checkIn=${checkIn}&checkOut=${checkOut}`);
   };
 
   const resolveImageUrl = (path: string) => {
@@ -207,7 +95,8 @@ export default function RoomDetailPage() {
       <div className="min-h-screen bg-slate-50 py-12">
         <div className="mx-auto max-w-7xl px-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
-            Loading room details...
+            <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+            <p className="text-slate-600">Loading room details...</p>
           </div>
         </div>
       </div>
@@ -216,18 +105,18 @@ export default function RoomDetailPage() {
 
   if (!room) return null;
 
-  const roomPrice = room.pricePerNight * nights;
-  const totalPrice = roomPrice - discount;
-
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="mx-auto max-w-7xl px-4">
         {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="mb-6 text-blue-600 hover:text-blue-700"
+          className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-700"
         >
-          ← Back to rooms
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to rooms
         </button>
 
         <div className="grid gap-8 lg:grid-cols-3">
@@ -347,13 +236,10 @@ export default function RoomDetailPage() {
             )}
           </div>
 
-          {/* Right: Booking Form */}
+          {/* Right: Booking Summary */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
-              <form
-                onSubmit={handleSubmit}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg"
-              >
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
                 <h2 className="mb-4 text-xl font-bold text-slate-900">
                   Book This Room
                 </h2>
@@ -379,129 +265,36 @@ export default function RoomDetailPage() {
                   </div>
                 </div>
 
-                {/* Guest Name */}
-                <div className="mb-4">
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={guestName}
-                    onChange={(e) => setGuestName(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
-                    required
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="mb-4">
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    value={guestEmail}
-                    onChange={(e) => setGuestEmail(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
-                    required
-                  />
-                </div>
-
-                {/* Phone */}
-                <div className="mb-4">
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">
-                    Phone *
-                  </label>
-                  <input
-                    type="tel"
-                    value={guestPhone}
-                    onChange={(e) => setGuestPhone(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
-                    placeholder="+66812345678"
-                    required
-                  />
-                </div>
-
-                {/* Number of Guests */}
-                <div className="mb-4">
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">
-                    Number of Guests
-                  </label>
-                  <select
-                    value={numberOfGuests}
-                    onChange={(e) => setNumberOfGuests(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
-                  >
-                    {Array.from({ length: room.maxGuests }, (_, i) => i + 1).map(
-                      (num) => (
-                        <option key={num} value={num}>
-                          {num} {num === 1 ? "guest" : "guests"}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </div>
-
-                {/* Promo Code */}
-                <div className="mb-4">
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">
-                    Promo Code
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={promoCode}
-                      onChange={handlePromoChange}
-                      className="flex-1 rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
-                      placeholder="WELCOME10"
-                    />
-                    <button
-                      type="button"
-                      onClick={handlePromoApply}
-                      className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                  {promoValid && promoData && (
-                    <div className="mt-1 text-xs text-green-600">
-                      ✓ {promoData.name} applied
-                    </div>
-                  )}
-                </div>
-
-                {/* Special Requests */}
+                {/* Price Display */}
                 <div className="mb-6">
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">
-                    Special Requests (Optional)
-                  </label>
-                  <textarea
-                    value={specialRequests}
-                    onChange={(e) => setSpecialRequests(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
-                    rows={3}
-                    placeholder="Late check-in, high floor, etc."
-                  />
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <span className="text-slate-600">Room price × {nights} night{nights > 1 ? 's' : ''}</span>
+                    <span className="font-semibold text-slate-900">
+                      ฿{(room.pricePerNight * nights).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="border-t border-slate-200 pt-3">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-lg font-bold text-slate-900">Total</span>
+                      <span className="text-2xl font-bold text-blue-600">
+                        ฿{(room.pricePerNight * nights).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Price Breakdown */}
-                <PriceBreakdown
-                  roomPrice={roomPrice}
-                  discount={discount}
-                  totalPrice={totalPrice}
-                  nights={nights}
-                  promoCode={promoValid ? promoCode : undefined}
-                />
-
-                {/* Submit Button */}
+                {/* Book Now Button */}
                 <button
-                  type="submit"
-                  disabled={submitting}
-                  className="mt-6 w-full rounded-xl bg-blue-600 px-6 py-3 font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                  onClick={handleBookNow}
+                  className="w-full rounded-xl bg-blue-600 px-6 py-4 text-lg font-bold text-white transition-colors hover:bg-blue-700"
                 >
-                  {submitting ? "Processing..." : "Complete Booking"}
+                  Book Now
                 </button>
-              </form>
+
+                <p className="mt-4 text-center text-xs text-slate-500">
+                  You won't be charged yet
+                </p>
+              </div>
             </div>
           </div>
         </div>
