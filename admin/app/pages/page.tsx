@@ -50,7 +50,9 @@ export default function PagesBuilder() {
       throw new Error("Upload failed");
     }
     const data = await response.json();
-    return data.url as string;
+    // Return the path (relative) instead of url (absolute)
+    // This ensures images work correctly with the resolveUploadUrl helper
+    return data.path as string;
   };
 
   // Handle save with SweetAlert notification

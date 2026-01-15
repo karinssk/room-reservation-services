@@ -18,7 +18,7 @@ export default function OmiseReturnPage() {
   useEffect(() => {
     const confirm = async () => {
       if (!bookingNumber) {
-        router.push(`/${locale}/rooms`);
+        router.push(`/${locale}/booking`);
         return;
       }
       try {

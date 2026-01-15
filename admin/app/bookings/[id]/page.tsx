@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { backendBaseUrl } from "@/lib/urls";
+import { getAdminAuthHeaders } from "@/lib/auth";
 import Link from "next/link";
 
 const API_URL = backendBaseUrl;
@@ -72,7 +73,9 @@ export default function BookingDetailPage() {
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/bookings/${params.id}`);
+      const res = await fetch(`${API_URL}/bookings/${params.id}`, {
+        headers: getAdminAuthHeaders(),
+      });
       if (!res.ok) {
         alert("Booking not found");
         router.push("/bookings");
@@ -97,7 +100,10 @@ export default function BookingDetailPage() {
     try {
       const res = await fetch(`${API_URL}/bookings/${booking.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAdminAuthHeaders(),
+        },
         body: JSON.stringify({
           status: editStatus,
           paymentStatus: editPaymentStatus,
@@ -127,6 +133,7 @@ export default function BookingDetailPage() {
     try {
       const res = await fetch(`${API_URL}/bookings/${booking.id}`, {
         method: "DELETE",
+        headers: getAdminAuthHeaders(),
       });
 
       if (res.ok) {

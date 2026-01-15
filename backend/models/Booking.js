@@ -61,6 +61,7 @@ const bookingSchema = new mongoose.Schema(
         paymentMethod: { type: String, default: "" },
         paymentProvider: { type: String, default: "" },
         paymentReference: { type: String, default: "" },
+        paymentSlip: { type: String, default: "" }, // Payment slip/receipt image path
 
         // Additional Information
         specialRequests: { type: String, default: "" },

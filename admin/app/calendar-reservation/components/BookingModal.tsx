@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { backendBaseUrl } from "@/lib/urls";
+import { getAdminAuthHeaders } from "@/lib/auth";
 
 const API_URL = backendBaseUrl;
 
@@ -96,7 +97,9 @@ export default function BookingModal({
     if (!bookingId) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/bookings/${bookingId}`);
+      const res = await fetch(`${API_URL}/bookings/${bookingId}`, {
+        headers: getAdminAuthHeaders(),
+      });
       const data = await res.json();
       const booking = data.booking;
 
@@ -157,7 +160,10 @@ export default function BookingModal({
 
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAdminAuthHeaders(),
+        },
         body: JSON.stringify(payload),
       });
 

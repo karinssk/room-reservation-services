@@ -18,7 +18,7 @@ export default function StripeReturnPage() {
   useEffect(() => {
     const confirm = async () => {
       if (!sessionId || !bookingNumber) {
-        router.push(`/${locale}/rooms`);
+        router.push(`/${locale}/booking`);
         return;
       }
       try {

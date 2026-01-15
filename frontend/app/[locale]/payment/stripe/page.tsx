@@ -24,7 +24,7 @@ export default function StripePaymentPage() {
 
   useEffect(() => {
     if (!bookingNumber) {
-      router.push(`/${locale}/rooms`);
+      router.push(`/${locale}/booking`);
       return;
     }
     const load = async () => {

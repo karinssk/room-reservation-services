@@ -6,6 +6,7 @@ const IndividualRoom = require("../models/IndividualRoom");
 const PromoCode = require("../models/PromoCode");
 const { createBookingEvent, updateBookingEvent, deleteBookingEvent } = require("../utils/calendarHelpers");
 const { sendBookingConfirmation, sendBookingCancellation } = require("../utils/emailService");
+const { requireAdmin } = require("../utils/auth");
 
 // Helper function to extract language-specific string
 function getLangString(value, locale) {
@@ -507,7 +508,7 @@ router.get("/bookings/lookup/:bookingNumber", async (req, res) => {
 // ==================== ADMIN ROUTES ====================
 
 // Get all bookings (ADMIN)
-router.get("/bookings", async (req, res) => {
+router.get("/bookings", requireAdmin, async (req, res) => {
     try {
         const filter = {};
 
@@ -583,7 +584,7 @@ router.get("/bookings", async (req, res) => {
 });
 
 // Get single booking (ADMIN)
-router.get("/bookings/:id", async (req, res) => {
+router.get("/bookings/:id", requireAdmin, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id)
             .populate("roomTypeId")
@@ -648,7 +649,7 @@ router.get("/bookings/:id", async (req, res) => {
 });
 
 // Update booking (ADMIN)
-router.put("/bookings/:id", async (req, res) => {
+router.put("/bookings/:id", requireAdmin, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id);
         if (!booking) {
@@ -770,7 +771,7 @@ router.put("/bookings/:id", async (req, res) => {
 });
 
 // Delete booking (ADMIN)
-router.delete("/bookings/:id", async (req, res) => {
+router.delete("/bookings/:id", requireAdmin, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id).lean();
         if (!booking) {

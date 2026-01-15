@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useLocale } from "next-intl";
+import { usePathname, useRouter } from "next/navigation";
+import { locales, type Locale } from "@/i18n";
 import { resolveUploadUrl } from "@/lib/urls";
 import { Link } from "@/lib/navigation";
+import { backendBaseUrl } from "@/lib/urls";
 
 export type NavItem = {
   id: string;
@@ -114,40 +118,335 @@ function NavDropdownItem({ item }: { item: NavItem }) {
 
 export default function Navbar({
   items,
-  cta,
   logoUrl,
 }: {
   items: NavItem[];
   cta?: NavCta;
   logoUrl?: string;
 }) {
+  const fallbackLogo = "/uploads/logo-the-wang-yaowarat.png";
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const handleEmailLogin = async () => {
+    const isValid =
+      email.trim().toLowerCase() === "customer_test@gmail.com" &&
+      password === "258369";
+    if (!isValid) {
+      setStatusMessage("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      return;
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.trim();
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("customerAuth", "true");
+      window.localStorage.setItem("customerEmail", cleanEmail);
+      if (cleanPhone) window.localStorage.setItem("customerPhone", cleanPhone);
+      window.localStorage.removeItem("customerProvider");
+    }
+    setAuthOpen(false);
+    setStatusMessage("เข้าสู่ระบบสำเร็จ");
+    setTimeout(() => setStatusMessage(null), 2000);
+  };
+
+  const handleSocialLogin = async (provider: "google" | "line") => {
+    const redirectUrl = `${backendBaseUrl}/auth/${provider}`;
+    window.location.href = redirectUrl;
+  };
+
+  const handleLanguageChange = (newLocale: Locale) => {
+    const pathnameWithoutLocale = pathname.replace(`/${locale}`, "");
+    router.push(`/${newLocale}${pathnameWithoutLocale}`);
+    setLanguageOpen(false);
+  };
+
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white text-black">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-3 text-lg font-semibold">
-          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
-            {logoUrl ? (
-              <img
-                src={resolveUploadUrl(logoUrl)}
-                alt="Logo"
-                className="h-full w-full object-cover"
-              />
-            ) : null}
-          </span>
-          The Wang Yaowarat
-        </Link>
-        <div className="hidden items-center gap-6 text-sm lg:flex">
-          {items.map((item) => (
-            <NavDropdownItem key={item.id} item={item} />
-          ))}
-          <Link
-            href={cta?.href || "#booking"}
-            className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white"
-          >
-            {cta?.label || "Book Appointment"}
-          </Link>
+    <>
+      <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white text-black">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-6 lg:py-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 lg:hidden"
+              aria-label="Open menu"
+              onClick={() => setMobileOpen((prev) => !prev)}
+            >
+              ☰
+            </button>
+            <Link href="/" className="flex items-center gap-3 text-lg font-semibold">
+              <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
+                {logoUrl || fallbackLogo ? (
+                  <img
+                    src={resolveUploadUrl(logoUrl || fallbackLogo)}
+                    alt="Logo"
+                    className="h-full w-full object-cover"
+                  />
+                ) : null}
+              </span>
+              <span className="hidden sm:inline">The Wang Yaowarat</span>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-2 lg:hidden">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setLanguageOpen((prev) => !prev)}
+                className="flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold uppercase"
+                aria-label="Language"
+              >
+                {locale}
+                <span className="text-[10px]">▾</span>
+              </button>
+              {languageOpen && (
+                <div className="absolute right-0 top-full z-10 mt-2 w-24 rounded-xl border border-slate-200 bg-white p-1 text-xs shadow-xl">
+                  {locales.map((lng) => (
+                    <button
+                      key={lng}
+                      onClick={() => handleLanguageChange(lng)}
+                      className={`w-full rounded-lg px-2 py-1 text-left uppercase ${
+                        lng === locale ? "bg-slate-900 text-white" : "hover:bg-slate-100"
+                      }`}
+                    >
+                      {lng}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Link
+              href="/booking"
+              className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
+            >
+              Book
+            </Link>
+          </div>
+
+          <div className="hidden items-center gap-6 text-sm lg:flex">
+            {items.map((item) => (
+              <NavDropdownItem key={item.id} item={item} />
+            ))}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setLanguageOpen((prev) => !prev)}
+                className="flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold uppercase"
+                aria-label="Language"
+              >
+                {locale}
+                <span className="text-[10px]">▾</span>
+              </button>
+              {languageOpen && (
+                <div className="absolute right-0 top-full z-10 mt-2 w-24 rounded-xl border border-slate-200 bg-white p-1 text-xs shadow-xl">
+                  {locales.map((lng) => (
+                    <button
+                      key={lng}
+                      onClick={() => handleLanguageChange(lng)}
+                      className={`w-full rounded-lg px-2 py-1 text-left uppercase ${
+                        lng === locale ? "bg-slate-900 text-white" : "hover:bg-slate-100"
+                      }`}
+                    >
+                      {lng}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setAuthOpen(true)}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              Sign-in
+            </button>
+            <Link
+              href="/booking"
+              className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+            >
+              Book
+            </Link>
+          </div>
         </div>
-      </div>
-    </nav>
+        {mobileOpen && (
+          <div className="border-t border-slate-200 bg-white lg:hidden">
+            <div className="mx-auto grid max-w-6xl gap-4 px-4 py-4">
+              {items.map((item) => (
+                <div key={item.id} className="grid gap-2">
+                  <Link href={item.href} className="text-sm font-semibold">
+                    {item.label}
+                  </Link>
+                  {item.children && item.children.length > 0 && (
+                    <div className="grid gap-2 border-l border-slate-200 pl-3 text-xs text-slate-600">
+                      {item.children.map((child) => (
+                        <div key={child.id} className="grid gap-1">
+                          <Link href={child.href} className="font-medium text-slate-700">
+                            {child.label}
+                          </Link>
+                          {child.children && child.children.length > 0 && (
+                            <div className="grid gap-1 pl-3 text-[11px] text-slate-500">
+                              {child.children.map((subChild) => (
+                                <Link key={subChild.id} href={subChild.href}>
+                                  {subChild.label}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => setAuthOpen(true)}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                >
+                  Sign-in
+                </button>
+                <Link
+                  href="/booking"
+                  className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
+                >
+                  Book
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {authOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <button
+              onClick={() => setAuthOpen(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <div className="grid md:grid-cols-[1.1fr_1fr]">
+              <div className="flex flex-col items-center justify-center gap-3 bg-white px-6 py-10 text-center">
+                <div className="h-20 w-20 overflow-hidden rounded-full border border-slate-100 bg-white p-1">
+                  <img
+                    src={resolveUploadUrl(logoUrl || fallbackLogo)}
+                    alt="The Wang Yaowarat"
+                    className="h-full w-full object-contain rounded-full"
+                  />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  The Wang Yaowarat
+                </h3>
+                <p className="text-sm text-slate-500">
+                  ยินดีต้อนรับสู่โรงแรมเดอะวังเยาวราช
+                </p>
+                <p className="mt-4 text-xs text-slate-400">
+                  Welcome to The Wang Yaowarat Hotel
+                </p>
+              </div>
+              <div className="border-l border-slate-100 px-6 py-10">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  เข้าสู่ระบบ
+                </h3>
+                <div className="mt-4 grid gap-3">
+                  <label className="text-xs text-slate-500">เบอร์มือถือ</label>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="กรอกเบอร์มือถือ"
+                  />
+                  <button
+                    className="rounded-xl bg-slate-200 px-3 py-2 text-xs text-slate-500"
+                    disabled
+                  >
+                    ขอรหัส OTP
+                  </button>
+                </div>
+                <div className="my-5 h-px bg-slate-100" />
+                <div className="grid gap-3">
+                  <button
+                    type="button"
+                    className="text-left text-xs text-slate-500"
+                    onClick={() => setShowPassword(true)}
+                  >
+                    อีเมล
+                  </button>
+                  <input
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="กรอกอีเมล"
+                    value={email}
+                    onFocus={() => setShowPassword(true)}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                  {showPassword && (
+                    <>
+                      <label className="text-xs text-slate-500">รหัสผ่าน</label>
+                      <input
+                        type="password"
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                        placeholder="กรอกรหัสผ่าน"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                      />
+                      <button
+                        onClick={handleEmailLogin}
+                        className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors"
+                      >
+                        เข้าสู่ระบบด้วยอีเมล
+                      </button>
+                    </>
+                  )}
+                  {statusMessage && (
+                    <p className={`text-xs ${statusMessage.includes("สำเร็จ") ? "text-green-600" : "text-rose-500"}`}>
+                      {statusMessage}
+                    </p>
+                  )}
+                </div>
+                <div className="my-5 h-px bg-slate-100" />
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleSocialLogin("google")}
+                    className="flex h-12 items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm"
+                    aria-label="Google"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                    <span>Google</span>
+                  </button>
+                  <button
+                    onClick={() => handleSocialLogin("line")}
+                    className="flex h-12 items-center gap-2 rounded-xl border-2 border-[#06C755] bg-[#06C755] px-4 py-2 text-sm font-semibold text-white hover:bg-[#05b34c] transition-all shadow-sm"
+                    aria-label="Line"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                      <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+                    </svg>
+                    <span>LINE</span>
+                  </button>
+                </div>
+                <p className="mt-4 text-[10px] text-slate-400">
+                  ทดสอบ: customer_test@gmail.com / 258369
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

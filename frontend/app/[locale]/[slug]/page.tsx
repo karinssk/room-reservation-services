@@ -30,9 +30,11 @@ async function fetchPage(slug: string) {
   return data.page as PageData;
 }
 
-async function fetchMenu() {
+async function fetchMenu(locale: string) {
   try {
-    const response = await fetch(`${backendBaseUrl}/menu`, { cache: "no-store" });
+    const response = await fetch(`${backendBaseUrl}/menu?locale=${locale}`, {
+      cache: "no-store",
+    });
     if (!response.ok) return [];
     const data = await response.json();
     return data.menu || null;
@@ -54,7 +56,7 @@ async function fetchFooter() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
   const page = await fetchPage(slug);
@@ -91,15 +93,15 @@ export async function generateMetadata({
 export default async function Page({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
   if (slug === "home") {
     redirect("/");
   }
   const page = await fetchPage(slug);
   if (!page) return notFound();
-  const menu = await fetchMenu();
+  const menu = await fetchMenu(locale);
   const footer = await fetchFooter();
   const canonical = frontendBaseUrl
     ? `${frontendBaseUrl}/${page.slug}`

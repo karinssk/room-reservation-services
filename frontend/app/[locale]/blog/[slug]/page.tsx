@@ -54,9 +54,11 @@ async function fetchOtherPosts(currentSlug: string): Promise<PostSummary[]> {
   }
 }
 
-async function fetchMenu() {
+async function fetchMenu(locale: string) {
   try {
-    const response = await fetch(`${backendBaseUrl}/menu`, { cache: "no-store" });
+    const response = await fetch(`${backendBaseUrl}/menu?locale=${locale}`, {
+      cache: "no-store",
+    });
     if (!response.ok) return [];
     const data = await response.json();
     return data.menu || null;
@@ -79,7 +81,7 @@ async function fetchFooter() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = await fetchPost(slug);
@@ -118,13 +120,13 @@ export async function generateMetadata({
 export default async function BlogDetail({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
   const post = await fetchPost(slug);
   if (!post) return notFound();
   const [menu, footer, otherPosts] = await Promise.all([
-    fetchMenu(),
+    fetchMenu(locale),
     fetchFooter(),
     fetchOtherPosts(slug),
   ]);

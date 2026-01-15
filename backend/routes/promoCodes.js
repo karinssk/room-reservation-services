@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const PromoCode = require("../models/PromoCode");
+const { requireAdmin } = require("../utils/auth");
 
 // Helper function to extract language-specific string
 function getLangString(value, locale) {
@@ -46,8 +47,13 @@ router.get("/promo-codes/active", async (req, res) => {
 
 // ==================== ADMIN ROUTES ====================
 
+// Apply admin authentication middleware for all routes below
+// Apply admin authentication middleware for all routes below
+// router.use(requireAdmin); // Removed to prevent blocking other routers
+
+
 // Get all promo codes (ADMIN)
-router.get("/promo-codes", async (req, res) => {
+router.get("/promo-codes", requireAdmin, async (req, res) => {
     try {
         const filter = {};
 
@@ -104,7 +110,7 @@ router.get("/promo-codes", async (req, res) => {
 });
 
 // Get single promo code (ADMIN)
-router.get("/promo-codes/:id", async (req, res) => {
+router.get("/promo-codes/:id", requireAdmin, async (req, res) => {
     try {
         const promoCode = await PromoCode.findById(req.params.id)
             .populate("applicableRoomTypes")
@@ -146,7 +152,7 @@ router.get("/promo-codes/:id", async (req, res) => {
 });
 
 // Create promo code (ADMIN)
-router.post("/promo-codes", async (req, res) => {
+router.post("/promo-codes", requireAdmin, async (req, res) => {
     try {
         const payload = {
             code: req.body?.code?.toUpperCase(),
@@ -194,7 +200,7 @@ router.post("/promo-codes", async (req, res) => {
 });
 
 // Update promo code (ADMIN)
-router.put("/promo-codes/:id", async (req, res) => {
+router.put("/promo-codes/:id", requireAdmin, async (req, res) => {
     try {
         const promoCode = await PromoCode.findById(req.params.id);
         if (!promoCode) {
@@ -255,7 +261,7 @@ router.put("/promo-codes/:id", async (req, res) => {
 });
 
 // Delete promo code (ADMIN)
-router.delete("/promo-codes/:id", async (req, res) => {
+router.delete("/promo-codes/:id", requireAdmin, async (req, res) => {
     try {
         const promoCode = await PromoCode.findByIdAndDelete(req.params.id).lean();
         if (!promoCode) {
@@ -268,7 +274,7 @@ router.delete("/promo-codes/:id", async (req, res) => {
 });
 
 // Reset usage count (ADMIN)
-router.post("/promo-codes/:id/reset-usage", async (req, res) => {
+router.post("/promo-codes/:id/reset-usage", requireAdmin, async (req, res) => {
     try {
         const promoCode = await PromoCode.findByIdAndUpdate(
             req.params.id,

@@ -62,8 +62,19 @@ export default function PromoCodesPage() {
       setLoading(false);
       return;
     }
+    const token = window.localStorage.getItem("adminToken");
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch(`${API_URL}/promo-codes`);
+      const res = await fetch(`${API_URL}/promo-codes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        // Handle unauthorized if needed, e.g., redirect to login
+      }
       const data = await res.json();
       setPromoCodes(data.promoCodes || []);
     } catch (error) {
@@ -121,9 +132,13 @@ export default function PromoCodesPage() {
         : `${API_URL}/promo-codes`;
       const method = editingId ? "PUT" : "POST";
 
+      const token = window.localStorage.getItem("adminToken");
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify(payload),
       });
 
@@ -176,8 +191,10 @@ export default function PromoCodesPage() {
     if (!confirm("Are you sure you want to delete this promo code?")) return;
 
     try {
+      const token = window.localStorage.getItem("adminToken");
       const res = await fetch(`${API_URL}/promo-codes/${id}`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         await loadPromoCodes();
@@ -479,11 +496,10 @@ export default function PromoCodesPage() {
                       </span>
                     )}
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        promo.status === "active"
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${promo.status === "active"
                           ? "bg-green-100 text-green-700"
                           : "bg-gray-100 text-gray-700"
-                      }`}
+                        }`}
                     >
                       {promo.status}
                     </span>

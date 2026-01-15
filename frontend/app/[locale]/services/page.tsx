@@ -49,9 +49,11 @@ async function fetchServices(locale: string): Promise<ServiceSummary[]> {
   }
 }
 
-async function fetchMenu() {
+async function fetchMenu(locale: string) {
   try {
-    const response = await fetch(`${backendBaseUrl}/menu`, { cache: "no-store" });
+    const response = await fetch(`${backendBaseUrl}/menu?locale=${locale}`, {
+      cache: "no-store",
+    });
     if (!response.ok) return [];
     const data = await response.json();
     return data.menu || null;
@@ -88,7 +90,7 @@ export default async function ServicesPage({
   const [categories, services, menu, footer] = await Promise.all([
     fetchCategories(),
     fetchServices(locale),
-    fetchMenu(),
+    fetchMenu(locale),
     fetchFooter(),
   ]);
 

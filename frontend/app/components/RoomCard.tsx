@@ -13,7 +13,7 @@ type RoomCardProps = {
     pricePerMonth: number;
     maxGuests: number;
     size?: string;
-    availableRooms?: number;
+    availablebooking?: number;
   };
   checkIn?: string;
   checkOut?: string;
@@ -33,7 +33,7 @@ export default function RoomCard({
   };
 
   const buildRoomUrl = () => {
-    const baseUrl = `/${locale}/rooms/${room.slug}`;
+    const baseUrl = `/${locale}/booking/${room.slug}`;
     if (checkIn && checkOut) {
       return `${baseUrl}?checkIn=${checkIn}&checkOut=${checkOut}`;
     }
@@ -50,11 +50,11 @@ export default function RoomCard({
             alt={room.name}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
           />
-          {room.availableRooms !== undefined && (
+          {room.availablebooking !== undefined && (
             <div className="absolute right-3 top-3 rounded-full bg-white px-3 py-1 text-sm font-semibold shadow-md">
-              {room.availableRooms > 0 ? (
+              {room.availablebooking > 0 ? (
                 <span className="text-green-600">
-                  {room.availableRooms} available
+                  {room.availablebooking} available
                 </span>
               ) : (
                 <span className="text-red-600">Fully booked</span>
@@ -119,7 +119,7 @@ export default function RoomCard({
                 </div>
               )}
             </div>
-            <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+            <button className="rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800">
               View Details
             </button>
           </div>

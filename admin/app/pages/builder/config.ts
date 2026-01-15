@@ -12,6 +12,12 @@ export const blockCatalog = [
     stripe: "bg-slate-400",
   },
   {
+    type: "hero-with-available-rooms-check",
+    label: "Hero With Room Search",
+    preview: "bg-[var(--brand-navy)]",
+    stripe: "bg-[var(--brand-yellow)]",
+  },
+  {
     type: "contact-and-services",
     label: "Contact & Services",
     preview: "bg-[var(--brand-navy)]",
@@ -202,6 +208,7 @@ export const blockCatalog = [
 export const thumbnailMap: Record<string, string> = {
   hero: "/thumbnails/hero.svg",
   "hero-images": "/thumbnails/hero-images.svg",
+  "hero-with-available-rooms-check": "/thumbnails/hero.svg",
   "contact-and-services": "/thumbnails/contact-and-services.svg",
   "achievement-expreience": "/thumbnails/achievement-expreience.svg",
   "why-choose-us": "/thumbnails/why-choose-us.svg",
@@ -266,6 +273,21 @@ export const defaultProps: Record<string, Record<string, unknown>> = {
         subtitle: "Flexible terms, fast confirmation",
       },
     ],
+  },
+  "hero-with-available-rooms-check": {
+    title: "The Wang Yaowarat",
+    subtitle: "Daily & Monthly Stays",
+    description:
+      "Find available rooms instantly and book your stay in minutes.",
+    backgroundImage:
+      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1400&q=80",
+    overlayTitle: "Check available rooms",
+    overlayButtonText: "Search availability",
+    titleColor: "#ffffff",
+    subtitleColor: "#cbd5f5",
+    descriptionColor: "#e2e8f0",
+    buttonBackground: "#2563eb",
+    buttonTextColor: "#ffffff",
   },
   "contact-and-services": {
     backgroundColor: "#ffffff",

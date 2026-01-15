@@ -38,6 +38,8 @@ type FooterData = {
 };
 
 const safeText = (value?: string) => (value ? String(value) : "");
+const fallbackLogo = "/uploads/logo-the-wang-yaowarat.png";
+const fallbackBrand = "The Wang Yaowarat";
 
 export default function Footer({ footer }: { footer: FooterData }) {
   const backgroundStyle = safeText(footer.backgroundColor)
@@ -49,17 +51,17 @@ export default function Footer({ footer }: { footer: FooterData }) {
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 md:grid-cols-[1.2fr_1fr_1fr_1.1fr]">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            {footer.brand?.logoUrl ? (
+            {footer.brand?.logoUrl || fallbackLogo ? (
               <img
-                src={resolveUploadUrl(safeText(footer.brand.logoUrl))}
-                alt={safeText(footer.brand?.name)}
+                src={resolveUploadUrl(safeText(footer.brand?.logoUrl) || fallbackLogo)}
+                alt={safeText(footer.brand?.name) || fallbackBrand}
                 className="h-10 w-10 rounded-full bg-white p-1"
               />
             ) : (
               <div className="h-10 w-10 rounded-full bg-white/10" />
             )}
             <p className="text-lg font-semibold">
-              {safeText(footer.brand?.name)}
+              {safeText(footer.brand?.name) || fallbackBrand}
             </p>
           </div>
           <p className="text-sm text-white/80">

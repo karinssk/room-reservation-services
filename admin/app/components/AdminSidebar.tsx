@@ -48,6 +48,7 @@ const fallbackAdminMenu: MenuItem[] = [
       { id: "footer", label: "Footer", href: "/footer", permission: "everyone" },
       { id: "quick-links", label: "Quick Links", href: "/quick-links", permission: "everyone" },
       { id: "payment-setting", label: "Payment Setting", href: "/payment-setting", permission: "everyone" },
+      { id: "email-templates", label: "Email Templates", href: "/email-templates", permission: "everyone" },
       { id: "admin-menu", label: "Admin Menu", href: "/admin-menu", permission: "owner-only" },
       { id: "profile", label: "Profile", href: "/profile", permission: "everyone" },
       { id: "admin-users", label: "Admin Approvals", href: "/admin-users", permission: "owner-only" },
@@ -78,6 +79,7 @@ const iconMap: Record<string, string> = {
   profile: "M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zM6 20c0-3.3 2.7-6 6-6s6 2.7 6 6",
   "admin-users": "M7 9h10M7 13h10M7 17h6",
   "payment-setting": "M5 12h14M12 5v14",
+  "email-templates": "M4 6h16M4 12h16M4 18h8",
   settings: "M12 4l2 2 3-1 1 3 3 1-1 3 2 2-2 2 1 3-3 1-1 3-3-1-2 2-2-2-3 1-1-3-3-1 1-3-2-2 2-2-1-3 3-1 1-3 3 1z",
 };
 
@@ -198,7 +200,7 @@ export default function AdminSidebar() {
 
   return (
     <aside
-      className={`${collapsed ? "w-20" : "w-72"} flex flex-col rounded-[28px] bg-white px-4 py-5 shadow-lg transition-all`}
+      className={`${collapsed ? "w-20" : "w-72"} flex flex-col min-h-screen rounded-[28px] bg-white px-4 py-5 shadow-lg transition-all`}
     >
       <div className="flex items-center justify-between gap-2">
         {!collapsed && (
@@ -218,7 +220,7 @@ export default function AdminSidebar() {
             </div>
             <div>
               <h1 className="text-base font-semibold text-slate-900">
-                RCA Admin
+                The Wang Yaowarat
               </h1>
               <p className="text-[10px] text-slate-400">
                 Dashboard & Content Studio

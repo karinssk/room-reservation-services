@@ -290,6 +290,92 @@ export function LivePreview({
       );
     }
 
+    if (block.type === "hero-with-available-rooms-check") {
+      const backgroundImage = safeText(props.backgroundImage);
+      return wrap(
+        <section className="relative overflow-hidden bg-slate-900 text-white">
+          {backgroundImage && (
+            <div
+              className="absolute inset-0 -z-10 bg-cover bg-center opacity-40"
+              style={{ backgroundImage: `url(${backgroundImage})` }}
+            />
+          )}
+          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-slate-900/80" />
+          <div className="mx-auto grid max-w-6xl gap-6 px-6 py-10 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-4">
+              <p
+                className="text-xs font-semibold uppercase tracking-[0.3em]"
+                style={{ color: safeText(props.subtitleColor) || "#cbd5f5" }}
+              >
+                <EditableText
+                  value={safeText(props.subtitle)}
+                  onCommit={(value) => onUpdateBlock(index, { subtitle: value })}
+                  className="text-white/80"
+                />
+              </p>
+              <h2
+                className="text-3xl font-semibold"
+                style={{ color: safeText(props.titleColor) || "#ffffff" }}
+              >
+                <EditableText
+                  value={safeText(props.title)}
+                  onCommit={(value) => onUpdateBlock(index, { title: value })}
+                  className="text-white"
+                />
+              </h2>
+              <p
+                className="text-sm"
+                style={{ color: safeText(props.descriptionColor) || "#e2e8f0" }}
+              >
+                <EditableText
+                  value={safeText(props.description)}
+                  onCommit={(value) =>
+                    onUpdateBlock(index, { description: value })
+                  }
+                  className="text-white/80"
+                  multiline
+                />
+              </p>
+            </div>
+            <div className="rounded-3xl bg-white p-5 text-slate-900 shadow-xl">
+              <p className="text-xs font-semibold text-slate-600">
+                <EditableText
+                  value={safeText(props.overlayTitle)}
+                  onCommit={(value) =>
+                    onUpdateBlock(index, { overlayTitle: value })
+                  }
+                  className="text-slate-600"
+                />
+              </p>
+              <div className="mt-3 grid gap-2 text-xs text-slate-500">
+                <div className="rounded-xl border border-slate-200 px-3 py-2">
+                  Check-in date
+                </div>
+                <div className="rounded-xl border border-slate-200 px-3 py-2">
+                  Check-out date
+                </div>
+                <div
+                  className="rounded-xl px-3 py-2 text-center text-xs font-semibold"
+                  style={{
+                    backgroundColor: safeText(props.buttonBackground) || "#2563eb",
+                    color: safeText(props.buttonTextColor) || "#ffffff",
+                  }}
+                >
+                  <EditableText
+                    value={safeText(props.overlayButtonText)}
+                    onCommit={(value) =>
+                      onUpdateBlock(index, { overlayButtonText: value })
+                    }
+                    className="text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     if (block.type === "contact-and-services") {
       const backgroundColor = safeText(props.backgroundColor);
       return wrap(

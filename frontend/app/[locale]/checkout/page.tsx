@@ -14,7 +14,7 @@ type BookingInfo = {
 };
 
 type PaymentSetting = {
-  provider: "omise" | "stripe";
+  provider: "omise" | "stripe" | "manual";
 };
 
 const API_URL = backendBaseUrl;
@@ -50,6 +50,14 @@ export default function CheckoutPage() {
         const settingData = await settingRes.json();
         setBooking(bookingData.booking || null);
         setSetting(settingData.setting || { provider: "omise" });
+        const provider = settingData.setting?.provider || "omise";
+        let destination = `/${locale}/payment/omise?bookingNumber=${bookingNumber}`;
+        if (provider === "stripe") {
+          destination = `/${locale}/payment/stripe?bookingNumber=${bookingNumber}`;
+        } else if (provider === "manual") {
+          destination = `/${locale}/payment/manual?bookingNumber=${bookingNumber}`;
+        }
+        router.replace(destination);
       } catch (error) {
         console.error("Failed to load checkout:", error);
       } finally {
@@ -59,15 +67,6 @@ export default function CheckoutPage() {
 
     load();
   }, [bookingNumber, locale, router]);
-
-  const handleContinue = () => {
-    if (!setting || !bookingNumber) return;
-    const destination =
-      setting.provider === "stripe"
-        ? `/${locale}/payment/stripe?bookingNumber=${bookingNumber}`
-        : `/${locale}/payment/omise?bookingNumber=${bookingNumber}`;
-    router.push(destination);
-  };
 
   if (loading) {
     return (
@@ -112,16 +111,8 @@ export default function CheckoutPage() {
           </div>
 
           <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">
-            Default payment gateway:{" "}
-            <strong>{setting?.provider === "stripe" ? "Stripe" : "Omise"}</strong>
+            Redirecting to payment...
           </div>
-
-          <button
-            onClick={handleContinue}
-            className="mt-6 w-full rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
-          >
-            Continue to Payment
-          </button>
         </div>
       </div>
     </div>

@@ -75,7 +75,7 @@ export default function RoomsPage() {
     const loadLayout = async () => {
       try {
         const [menuRes, footerRes] = await Promise.all([
-          fetch(`${API_URL}/menu`),
+          fetch(`${API_URL}/menu?locale=${locale}`),
           fetch(`${API_URL}/footer`),
         ]);
         if (menuRes.ok) {
@@ -92,7 +92,7 @@ export default function RoomsPage() {
     };
 
     loadLayout();
-  }, []);
+  }, [locale]);
 
   const loadData = async () => {
     setLoading(true);
@@ -162,7 +162,7 @@ export default function RoomsPage() {
             />
             <button
               onClick={handleDateChange}
-              className="mt-4 w-full rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
+              className="mt-4 w-full rounded-xl bg-black px-6 py-3 font-semibold text-white transition-colors hover:bg-slate-800"
             >
               Update Availability
             </button>
@@ -175,7 +175,7 @@ export default function RoomsPage() {
                 onClick={() => setSelectedCategory("all")}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                   selectedCategory === "all"
-                    ? "bg-blue-600 text-white"
+                    ? "bg-black text-white"
                     : "bg-white text-slate-700 hover:bg-slate-100"
                 }`}
               >
@@ -187,7 +187,7 @@ export default function RoomsPage() {
                   onClick={() => setSelectedCategory(category.slug)}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                     selectedCategory === category.slug
-                      ? "bg-blue-600 text-white"
+                      ? "bg-black text-white"
                       : "bg-white text-slate-700 hover:bg-slate-100"
                   }`}
                 >

@@ -50,9 +50,11 @@ async function fetchServices(): Promise<ServiceSummary[]> {
   }
 }
 
-async function fetchMenu() {
+async function fetchMenu(locale: string) {
   try {
-    const response = await fetch(`${backendBaseUrl}/menu`, { cache: "no-store" });
+    const response = await fetch(`${backendBaseUrl}/menu?locale=${locale}`, {
+      cache: "no-store",
+    });
     if (!response.ok) return [];
     const data = await response.json();
     return data.menu || null;
@@ -75,7 +77,7 @@ async function fetchFooter() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
   const categories = await fetchCategories();
@@ -95,13 +97,13 @@ export async function generateMetadata({
 export default async function ServicesByCategory({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
   const [categories, services, menu, footer] = await Promise.all([
     fetchCategories(),
     fetchServices(),
-    fetchMenu(),
+    fetchMenu(locale),
     fetchFooter(),
   ]);
   const category = categories.find((item) => item.slug === slug);

@@ -1,14 +1,14 @@
 {
   "metadata": {
-    "title": "RCA Aircon Express | Professional Air Conditioning Services",
-    "siteName": "RCA Aircon Express",
-    "description": "Professional air conditioning cleaning, repair, and installation services. Quick appointments, trained technicians, service guarantee.",
-    "keywords": "air conditioning service, AC repair, AC installation, annual AC maintenance, AC technician near me, RCA Aircon Express, air conditioner cleaning"
+    "title": "The Wang Yaowarat | Daily & Monthly Room Reservations",
+    "siteName": "The Wang Yaowarat",
+    "description": "Book daily or monthly stays in Chinatown, Bangkok. View real-time availability, transparent pricing, and fast confirmation.",
+    "keywords": "room reservation, daily stay, monthly stay, Bangkok hotel, Chinatown hotel, The Wang Yaowarat, book room"
   },
   "nav": {
     "home": "Home",
-    "services": "Services",
-    "products": "Products",
+    "services": "Rooms",
+    "products": "Offers",
     "about": "About Us",
     "contact": "Contact",
     "blog": "Blog",
@@ -17,7 +17,7 @@
   "common": {
     "learnMore": "Learn More",
     "contactUs": "Contact Us",
-    "requestQuote": "Request Quote",
+    "requestQuote": "Request Booking",
     "readMore": "Read More",
     "viewAll": "View All",
     "submit": "Submit",
@@ -28,36 +28,36 @@
     "language": "Language"
   },
   "hero": {
-    "title": "Professional Air Conditioning Services",
-    "subtitle": "Expert Installation, Maintenance & Repair",
-    "cta": "Get Started"
+    "title": "Daily & Monthly Room Reservations",
+    "subtitle": "Stay in the heart of Chinatown, Bangkok",
+    "cta": "Check Availability"
   },
   "services": {
-    "title": "Our Services",
-    "subtitle": "Complete air conditioning solutions for your needs",
-    "installation": "Installation",
-    "maintenance": "Maintenance",
-    "repair": "Repair",
-    "cleaning": "Cleaning"
+    "title": "Available Rooms",
+    "subtitle": "Find the right room for short stays or longer monthly bookings",
+    "installation": "Daily Stay",
+    "maintenance": "Monthly Stay",
+    "repair": "Family Stay",
+    "cleaning": "Business Stay"
   },
   "products": {
-    "title": "Our Products",
-    "subtitle": "High-quality air conditioning units",
+    "title": "Room Packages",
+    "subtitle": "Flexible options with transparent pricing",
     "viewDetails": "View Details",
-    "addToCart": "Add to Cart",
+    "addToCart": "Reserve Now",
     "price": "Price",
-    "contact": "Contact for Price"
+    "contact": "Contact for Custom Quote"
   },
   "about": {
     "title": "About Us",
-    "subtitle": "Your trusted air conditioning experts",
-    "experience": "Years of Experience",
-    "customers": "Happy Customers",
-    "projects": "Completed Projects"
+    "subtitle": "Your trusted room reservation partner",
+    "experience": "Years of Hosting",
+    "customers": "Happy Guests",
+    "projects": "Rooms Managed"
   },
   "contact": {
     "title": "Contact Us",
-    "subtitle": "Get in touch with us",
+    "subtitle": "Get in touch for bookings and special requests",
     "name": "Name",
     "email": "Email",
     "phone": "Phone",

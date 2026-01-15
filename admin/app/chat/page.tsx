@@ -60,6 +60,7 @@ export default function ChatPage() {
   const [sessionAdmins, setSessionAdmins] = useState<AdminProfile[]>([]);
   const [typingAdmins, setTypingAdmins] = useState<AdminProfile[]>([]);
   const [visitorTyping, setVisitorTyping] = useState(false);
+  const [showSidebarOnMobile, setShowSidebarOnMobile] = useState(true);
   const socketRef = useRef<Socket | null>(null);
   const activeSessionRef = useRef<SessionSummary | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -255,8 +256,8 @@ export default function ChatPage() {
     } catch (error) {
       console.error("Failed to load chat history", error);
     }
+    setShowSidebarOnMobile(false);
   };
-
 
   const sendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -349,9 +350,9 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-100px)] flex flex-col">
-      <header className="flex items-center justify-between mb-6 shrink-0">
-        <div>
+    <div className="h-[calc(100vh-140px)] sm:h-[calc(100vh-100px)] flex flex-col">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-6 shrink-0">
+        <div className="hidden sm:block">
           <h2 className="text-2xl font-bold text-slate-800">
             Chat Inbox
           </h2>
@@ -359,11 +360,11 @@ export default function ChatPage() {
             Real-time customer support
           </p>
         </div>
-        <div className="relative">
+        <div className="relative w-full sm:w-auto hidden sm:block">
           <button
             type="button"
             onClick={() => setShowOnlineAdmins((prev) => !prev)}
-            className="flex items-center gap-3 rounded-full bg-white px-4 py-2 text-sm shadow-sm border border-slate-100"
+            className="flex items-center justify-center gap-3 rounded-full bg-white px-4 py-2 text-sm shadow-sm border border-slate-100 w-full sm:w-auto"
           >
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -411,12 +412,14 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr] flex-1 min-h-0">
-        {/* Sidebar List */}
-        <section className="flex flex-col rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
-            <h3 className="font-semibold text-slate-700">
-              Sessions
+      <div className="flex flex-col gap-3 sm:gap-6 lg:grid lg:grid-cols-[320px_1fr] flex-1 min-h-0">
+        {/* Sidebar List - Customer Chat List */}
+        <section
+          className={`flex flex-col bg-white overflow-hidden ${showSidebarOnMobile ? "flex" : "hidden"} lg:flex rounded-none sm:rounded-3xl border-0 sm:border border-slate-200 shadow-none sm:shadow-sm`}
+        >
+          <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+            <h3 className="font-semibold text-slate-700 text-sm sm:text-base">
+              Customer Chats
             </h3>
             <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full font-medium">{sessions.length}</span>
           </div>
@@ -466,18 +469,34 @@ export default function ChatPage() {
         </section>
 
         {/* Chat Area */}
-        <section className="flex flex-col rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden h-full">
+        <section
+          className={`flex flex-col bg-white overflow-hidden h-full min-h-[60vh] lg:min-h-0 ${showSidebarOnMobile ? "hidden" : "flex"} lg:flex rounded-none sm:rounded-3xl border-0 sm:border border-slate-200 shadow-none sm:shadow-sm`}
+        >
           {activeSession ? (
             <>
               {/* Chat Header */}
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-                <div className="flex items-center gap-3">
+              <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowSidebarOnMobile(true)}
+                    className="lg:hidden h-9 w-9 rounded-full border border-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-50 shrink-0"
+                    aria-label="Back to customer chats"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
                   <div className="h-10 w-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">
                     {activeSession.visitorId.replace("visitor_", "").substring(0, 2).toUpperCase()}
                   </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-base">
-                      {activeSession.visitorId.replace("visitor_", "Visitor #")}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-slate-800 text-base truncate">
+                      {(() => {
+                        const visitorId = activeSession.visitorId.replace("visitor_", "");
+                        const shortId = visitorId.substring(0, 5);
+                        return `Visitor #${shortId}...`;
+                      })()}
                     </h3>
                     <p className="text-xs text-slate-500">
                       {activeSession.authProvider ? (
@@ -486,7 +505,7 @@ export default function ChatPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {sessionAdmins.length > 0 && (
                     <div className="flex -space-x-2">
                       {sessionAdmins.slice(0, 4).map((admin) => (
@@ -529,12 +548,12 @@ export default function ChatPage() {
               <div className="flex flex-1 min-h-0">
                 {/* Messages List */}
                 <div className="flex-1 flex flex-col min-w-0">
-                  <div className="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-4">
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 space-y-4">
                     {messages.map((message) => {
                       const isAdmin = message.sender === "admin";
                       return (
                         <div key={message.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${isAdmin
+                          <div className={`max-w-full sm:max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${isAdmin
                             ? 'bg-blue-600 text-white rounded-br-none'
                             : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none'
                             }`}>
@@ -612,8 +631,8 @@ export default function ChatPage() {
                   </div>
 
                   {/* Input Area */}
-                  <div className="p-4 bg-white border-t border-slate-100 shrink-0">
-                    <form onSubmit={sendMessage} className="flex gap-3">
+                  <div className="p-3 sm:p-4 bg-white border-t border-slate-100 shrink-0">
+                    <form onSubmit={sendMessage} className="flex items-center gap-2">
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -624,22 +643,35 @@ export default function ChatPage() {
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={!activeSession || uploadingAttachment}
-                        className="rounded-full border border-slate-200 px-4 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                        className="h-10 w-10 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 flex items-center justify-center shrink-0"
+                        aria-label="Attach file"
                       >
-                        {uploadingAttachment ? "Uploading..." : "Attach"}
+                        {uploadingAttachment ? (
+                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                          </svg>
+                        )}
                       </button>
                       <input
                         value={input}
                         onChange={(e) => handleTypingChange(e.target.value)}
-                        className="flex-1 rounded-full border border-slate-200 px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                        className="flex-1 rounded-full border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
                         placeholder="Type your message..."
                       />
                       <button
                         type="submit"
                         disabled={!input.trim()}
-                        className="rounded-full bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        className="h-10 w-10 rounded-full bg-blue-600 text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center shrink-0"
+                        aria-label="Send message"
                       >
-                        Send
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
                       </button>
                     </form>
                   </div>

@@ -253,6 +253,8 @@ function NavbarPreview({
   onCtaHrefChange: (value: string) => void;
 }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
 
   // Helper to get localized string
   const getLabel = (label: MultiLangString) => getLangString(label, activeLanguage);
@@ -294,131 +296,200 @@ function NavbarPreview({
 
         {/* Navbar */}
         <div className="bg-[#0b3c86]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 text-white">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/15">
-              {menu.logoUrl ? (
-                <img
-                  src={resolveUploadUrl(menu.logoUrl)}
-                  alt="Logo"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-[10px] text-white/60">Logo</span>
-              )}
-            </div>
-            <div>
-              <p className="text-sm font-semibold">RCA Aircon Express</p>
-              <p className="text-[11px] text-white/70">Aircon Services</p>
-            </div>
-          </div>
-          <div className="hidden items-center gap-6 text-sm md:flex">
-            {menu.items.map((item, index) => (
-              <div
-                key={item.id}
-                className="group relative"
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 text-white">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white md:hidden"
+                onClick={() => setMobileOpen((prev) => !prev)}
               >
-                <div className="flex flex-col items-center gap-1 cursor-pointer transition-colors group-hover:text-[#ffd200]">
-                  <span className="flex items-center gap-1">
-                    <EditableText
-                      value={getLabel(item.label)}
-                      onCommit={(value) => onItemLabelChange(index, value)}
-                    />
-                    {item.children && item.children.length > 0 && (
-                      <span className="text-[10px] transition-transform group-hover:rotate-180">▼</span>
-                    )}
-                  </span>
-                  <span className="text-[10px] text-white/50 group-hover:text-[#ffd200]/70">
-                    <EditableText
-                      value={item.href}
-                      onCommit={(value) => onItemHrefChange(index, value)}
-                      className="text-white/50 group-hover:text-[#ffd200]/70"
-                    />
-                  </span>
-                </div>
-                {item.children && item.children.length > 0 && (
-                  <div className={`absolute left-0 top-full mt-2 w-56 rounded-xl bg-white p-2 text-slate-700 shadow-2xl border border-slate-200 transition-all duration-200 ${hoveredIndex === index ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
-                    <div className="grid gap-1 text-sm">
-                      {item.children.map((child, childIndex) => (
-                        <div
-                          key={child.id}
-                          className="relative group/child"
-                        >
-                          <div className="rounded-lg px-3 py-2 hover:bg-slate-100 transition-colors cursor-pointer border-l-2 border-transparent hover:border-yellow-400 flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="font-medium flex items-center gap-2">
-                                <EditableText
-                                  value={getLabel(child.label)}
-                                  onCommit={(value) =>
-                                    onChildLabelChange(index, childIndex, value)
-                                  }
-                                  className="text-slate-700"
-                                />
-                              </div>
-                              <div className="text-[10px] text-slate-400 mt-0.5">
-                                <EditableText
-                                  value={child.href}
-                                  onCommit={(value) =>
-                                    onChildHrefChange(index, childIndex, value)
-                                  }
-                                  className="text-slate-400"
-                                />
-                              </div>
-                            </div>
-                            {child.children && child.children.length > 0 && (
-                              <span className="text-slate-400 text-sm">›</span>
-                            )}
-                          </div>
+                ☰
+              </button>
+              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/15">
+                {menu.logoUrl ? (
+                  <img
+                    src={resolveUploadUrl(menu.logoUrl)}
+                    alt="Logo"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[10px] text-white/60">Logo</span>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold">The Wang Yaowarat</p>
+                <p className="text-[11px] text-white/70">Hotel Reservation Services</p>
+              </div>
+            </div>
 
-                          {/* Sub-menu */}
-                          {child.children && child.children.length > 0 && (
-                            <div className="absolute left-full top-0 ml-1 w-56 rounded-xl bg-white p-2 text-slate-700 shadow-2xl border border-slate-200 opacity-0 invisible -translate-x-2 transition-all duration-200 group-hover/child:opacity-100 group-hover/child:visible group-hover/child:translate-x-0">
-                              <div className="grid gap-1 text-sm">
-                                {child.children.map((subChild) => (
-                                  <div
-                                    key={subChild.id}
-                                    className="rounded-lg px-3 py-2 hover:bg-slate-100 transition-colors cursor-pointer border-l-2 border-transparent hover:border-yellow-400"
-                                  >
-                                    <div className="font-medium text-slate-700">
-                                      {getLabel(subChild.label)}
-                                    </div>
-                                    <div className="text-[10px] text-slate-400 mt-0.5">
-                                      {subChild.href}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    {/* Dropdown arrow pointer */}
-                    <div className="absolute -top-2 left-4 w-4 h-4 bg-white border-l border-t border-slate-200 transform rotate-45"></div>
+            <div className="flex items-center gap-2 md:hidden">
+              <div className="relative">
+                <button
+                  type="button"
+                  className="flex h-9 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-[10px] font-semibold uppercase"
+                  onClick={() => setLanguageOpen((prev) => !prev)}
+                >
+                  {activeLanguage}
+                  <span className="text-[9px]">▾</span>
+                </button>
+                {languageOpen && (
+                  <div className="absolute right-0 top-full z-10 mt-2 w-20 rounded-xl border border-slate-200 bg-white p-1 text-[10px] text-slate-700 shadow-xl">
+                    {["th", "en"].map((lng) => (
+                      <button
+                        key={lng}
+                        className={`w-full rounded-lg px-2 py-1 text-left uppercase ${
+                          lng === activeLanguage ? "bg-slate-900 text-white" : "hover:bg-slate-100"
+                        }`}
+                      >
+                        {lng}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-          <div className="hidden md:block">
-            <span className="inline-flex flex-col items-center rounded-full bg-[#ffd200] px-5 py-2 text-[11px] font-semibold text-[#052a5f]">
-              <EditableText
-                value={menu.cta?.label ? getLabel(menu.cta.label) : "Book Appointment"}
-                onCommit={onCtaLabelChange}
-                className="text-[#052a5f]"
-              />
-              <span className="text-[9px] text-[#052a5f]/70">
-                <EditableText
-                  value={menu.cta?.href || "#booking"}
-                  onCommit={onCtaHrefChange}
-                  className="text-[#052a5f]/70"
-                />
+              <span className="inline-flex items-center rounded-full bg-white text-[#0b3c86] px-4 py-1.5 text-[10px] font-semibold">
+                Book
               </span>
-            </span>
+            </div>
+
+            <div className="hidden items-center gap-6 text-sm md:flex">
+              {menu.items.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="group relative"
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
+                  <div className="flex flex-col items-center gap-1 cursor-pointer transition-colors group-hover:text-[#ffd200]">
+                    <span className="flex items-center gap-1">
+                      <EditableText
+                        value={getLabel(item.label)}
+                        onCommit={(value) => onItemLabelChange(index, value)}
+                      />
+                      {item.children && item.children.length > 0 && (
+                        <span className="text-[10px] transition-transform group-hover:rotate-180">▼</span>
+                      )}
+                    </span>
+                    <span className="text-[10px] text-white/50 group-hover:text-[#ffd200]/70">
+                      <EditableText
+                        value={item.href}
+                        onCommit={(value) => onItemHrefChange(index, value)}
+                        className="text-white/50 group-hover:text-[#ffd200]/70"
+                      />
+                    </span>
+                  </div>
+                  {item.children && item.children.length > 0 && (
+                    <div className={`absolute left-0 top-full mt-2 w-56 rounded-xl bg-white p-2 text-slate-700 shadow-2xl border border-slate-200 transition-all duration-200 ${hoveredIndex === index ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
+                      <div className="grid gap-1 text-sm">
+                        {item.children.map((child, childIndex) => (
+                          <div
+                            key={child.id}
+                            className="relative group/child"
+                          >
+                            <div className="rounded-lg px-3 py-2 hover:bg-slate-100 transition-colors cursor-pointer border-l-2 border-transparent hover:border-yellow-400 flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="font-medium flex items-center gap-2">
+                                  <EditableText
+                                    value={getLabel(child.label)}
+                                    onCommit={(value) =>
+                                      onChildLabelChange(index, childIndex, value)
+                                    }
+                                    className="text-slate-700"
+                                  />
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                  <EditableText
+                                    value={child.href}
+                                    onCommit={(value) =>
+                                      onChildHrefChange(index, childIndex, value)
+                                    }
+                                    className="text-slate-400"
+                                  />
+                                </div>
+                              </div>
+                              {child.children && child.children.length > 0 && (
+                                <span className="text-slate-400 text-sm">›</span>
+                              )}
+                            </div>
+
+                            {/* Sub-menu */}
+                            {child.children && child.children.length > 0 && (
+                              <div className="absolute left-full top-0 ml-1 w-56 rounded-xl bg-white p-2 text-slate-700 shadow-2xl border border-slate-200 opacity-0 invisible -translate-x-2 transition-all duration-200 group-hover/child:opacity-100 group-hover/child:visible group-hover/child:translate-x-0">
+                                <div className="grid gap-1 text-sm">
+                                  {child.children.map((subChild) => (
+                                    <div
+                                      key={subChild.id}
+                                      className="rounded-lg px-3 py-2 hover:bg-slate-100 transition-colors cursor-pointer border-l-2 border-transparent hover:border-yellow-400"
+                                    >
+                                      <div className="font-medium text-slate-700">
+                                        {getLabel(subChild.label)}
+                                      </div>
+                                      <div className="text-[10px] text-slate-400 mt-0.5">
+                                        {subChild.href}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Dropdown arrow pointer */}
+                      <div className="absolute -top-2 left-4 w-4 h-4 bg-white border-l border-t border-slate-200 transform rotate-45"></div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="relative">
+                <button
+                  type="button"
+                  className="flex h-10 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 text-[11px] font-semibold uppercase"
+                  onClick={() => setLanguageOpen((prev) => !prev)}
+                >
+                  {activeLanguage}
+                  <span className="text-[9px]">▾</span>
+                </button>
+                {languageOpen && (
+                  <div className="absolute right-0 top-full z-10 mt-2 w-24 rounded-xl border border-slate-200 bg-white p-1 text-[10px] text-slate-700 shadow-xl">
+                    {["th", "en"].map((lng) => (
+                      <button
+                        key={lng}
+                        className={`w-full rounded-lg px-2 py-1 text-left uppercase ${
+                          lng === activeLanguage ? "bg-slate-900 text-white" : "hover:bg-slate-100"
+                        }`}
+                      >
+                        {lng}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <span className="inline-flex items-center rounded-full bg-white px-5 py-2 text-[11px] font-semibold text-[#0b3c86]">
+                Book
+              </span>
+            </div>
           </div>
-        </div>
+          {mobileOpen && (
+            <div className="border-t border-white/15 bg-[#0b3c86]/95 px-6 py-4 text-white md:hidden">
+              <div className="grid gap-3 text-xs">
+                {menu.items.map((item) => (
+                  <div key={item.id} className="grid gap-1">
+                    <span className="font-semibold">{getLabel(item.label)}</span>
+                    {item.children && item.children.length > 0 && (
+                      <div className="grid gap-1 border-l border-white/20 pl-3 text-[11px] text-white/80">
+                        {item.children.map((child) => (
+                          <div key={child.id}>
+                            {getLabel(child.label)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

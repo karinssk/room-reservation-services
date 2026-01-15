@@ -29,7 +29,6 @@ type AdminProfile = {
 
 export default function ChatWidget() {
   const [chatOpen, setChatOpen] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [visitorId, setVisitorId] = useState<string | null>(null);
@@ -37,11 +36,6 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [quickLinks, setQuickLinks] = useState<{
     whatsapp: { enabled: boolean; href: string };
     line: { enabled: boolean; href: string };
@@ -71,8 +65,6 @@ export default function ChatWidget() {
     const storedAuth = window.localStorage.getItem("customerAuth");
     if (storedAuth === "true") {
       setIsAuthed(true);
-      setEmail(window.localStorage.getItem("customerEmail") || "");
-      setPhone(window.localStorage.getItem("customerPhone") || "");
     }
 
     // Handle OAuth callback
@@ -92,8 +84,6 @@ export default function ChatWidget() {
         if (decoded.lineUserId) window.localStorage.setItem("customerLineId", decoded.lineUserId);
 
         setIsAuthed(true);
-        if (decoded.email) setEmail(decoded.email);
-        setAuthOpen(false);
         setChatOpen(true);
 
         // Clean URL
@@ -110,7 +100,7 @@ export default function ChatWidget() {
         console.error("Failed to parse auth data", err);
       }
     } else if (authError) {
-      setStatusMessage(`Authentication failed: ${authError}`);
+      console.error(`Authentication failed: ${authError}`);
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -132,14 +122,6 @@ export default function ChatWidget() {
     };
     fetchQuickLinks();
   }, []);
-
-  const updateSessionCustomer = async (sessId: string, data: any) => {
-    await fetch(`${backendBaseUrl}/chat/sessions/${sessId}/customer`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  };
 
   const initializingRef = useRef<Promise<string | null> | null>(null);
 
@@ -198,48 +180,6 @@ export default function ChatWidget() {
   };
 
   // ... (connectSocket, useEffects as is)
-
-  const handleEmailLogin = async () => {
-    const isValid =
-      email.trim().toLowerCase() === "customer_test@gmail.com" &&
-      password === "258369";
-    if (!isValid) {
-      setStatusMessage("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-      return;
-    }
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPhone = phone.trim();
-
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("customerAuth", "true");
-      window.localStorage.setItem("customerEmail", cleanEmail);
-      if (cleanPhone) window.localStorage.setItem("customerPhone", cleanPhone);
-      window.localStorage.removeItem("customerProvider");
-    }
-    setIsAuthed(true);
-    setAuthOpen(false);
-    setChatOpen(true);
-    if (queuedMessageRef.current) {
-      const queued = queuedMessageRef.current;
-      queuedMessageRef.current = null;
-      setInput(queued);
-      await sendMessage(queued);
-    }
-
-    if (sessionId) {
-      await updateSessionCustomer(sessionId, {
-        customerEmail: cleanEmail,
-        customerPhone: cleanPhone,
-        authProvider: "email"
-      });
-    }
-  };
-
-  const handleSocialLogin = async (provider: "google" | "line" | "facebook") => {
-    // Redirect to backend OAuth endpoint
-    const redirectUrl = `${backendBaseUrl}/auth/${provider}`;
-    window.location.href = redirectUrl;
-  };
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
@@ -459,7 +399,7 @@ export default function ChatWidget() {
       await sendMessage("", undefined, [attachment]);
     } catch (error) {
       console.error("Attachment upload failed", error);
-      setStatusMessage(
+      console.error(
         error instanceof Error ? error.message : "Unable to upload file."
       );
     } finally {
@@ -469,11 +409,7 @@ export default function ChatWidget() {
   };
 
   const openChatWithAuth = () => {
-    if (!isAuthed) {
-      setAuthOpen(true);
-      return;
-    }
-    setChatOpen((prev) => !prev);
+    setChatOpen(true);
   };
 
   useEffect(() => {
@@ -487,15 +423,14 @@ export default function ChatWidget() {
     const handleOpenChat = (event: Event) => {
       const detail = (event as CustomEvent<{ message?: string }>).detail;
       const presetMessage = detail?.message || "";
-      if (!isAuthed) {
-        setAuthOpen(true);
-        setInput(presetMessage);
-        queuedMessageRef.current = presetMessage;
-        return;
-      }
+
+      // Open chat without requiring auth
       setChatOpen(true);
       setInput(presetMessage);
-      if (presetMessage.trim()) {
+
+      if (!isAuthed) {
+        queuedMessageRef.current = presetMessage;
+      } else if (presetMessage.trim()) {
         sendMessage(presetMessage);
       }
     };
@@ -571,7 +506,7 @@ export default function ChatWidget() {
           )}
           <button
             onClick={openChatWithAuth}
-            className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand-blue)] text-white shadow-lg"
+            className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg"
             aria-label="Chat"
           >
             <span className="pointer-events-none absolute right-14 whitespace-nowrap rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-lg opacity-0 transition group-hover:opacity-100">
@@ -588,139 +523,20 @@ export default function ChatWidget() {
               return next;
             })
           }
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-blue)] text-white shadow-lg shadow-blue-900/40"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/40"
           aria-label="เปิดแชทกับแอดมิน"
         >
           💬
         </button>
       </div>
 
-      {authOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <button
-              onClick={() => setAuthOpen(false)}
-              className="absolute right-4 top-4 text-slate-400"
-              aria-label="Close"
-            >
-              ✕
-            </button>
-            <div className="grid md:grid-cols-[1.1fr_1fr]">
-              <div className="flex flex-col items-center justify-center gap-3 bg-white px-6 py-10 text-center">
-                <div className="h-20 w-20 overflow-hidden rounded-full border border-slate-100 bg-white p-1">
-                  <img
-                    src={`${backendBaseUrl}/uploads/1767366947883-logo-air-con-services.webp`}
-                    alt="The Wang Yaowarat"
-                    className="h-full w-full object-contain rounded-full"
-                  />
-                </div>
-                <h3 className="text-lg font-semibold text-[var(--brand-navy)]">
-                  The Wang Yaowarat
-                </h3>
-                <p className="text-sm text-slate-500">
-                  บริการเครื่องปรับอากาศครบวงจร
-                </p>
-                <p className="mt-4 text-xs text-slate-400">
-                  Professional Aircon Services
-                </p>
-              </div>
-              <div className="border-l border-slate-100 px-6 py-10">
-                <h3 className="text-lg font-semibold text-[var(--brand-navy)]">
-                  เข้าสู่ระบบ
-                </h3>
-                <div className="mt-4 grid gap-3">
-                  <label className="text-xs text-slate-500">เบอร์มือถือ</label>
-                  <input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                    placeholder="กรอกเบอร์มือถือ"
-                  />
-                  <button
-                    className="rounded-xl bg-slate-200 px-3 py-2 text-xs text-slate-500"
-                    disabled
-                  >
-                    ขอรหัส OTP
-                  </button>
-                </div>
-                <div className="my-5 h-px bg-slate-100" />
-                <div className="grid gap-3">
-                  <button
-                    type="button"
-                    className="text-left text-xs text-slate-500"
-                    onClick={() => setShowPassword(true)}
-                  >
-                    อีเมล
-                  </button>
-                  <input
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                    placeholder="กรอกอีเมล"
-                    value={email}
-                    onFocus={() => setShowPassword(true)}
-                    onChange={(event) => setEmail(event.target.value)}
-                  />
-                  {showPassword && (
-                    <>
-                      <label className="text-xs text-slate-500">รหัสผ่าน</label>
-                      <input
-                        type="password"
-                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                        placeholder="กรอกรหัสผ่าน"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                      />
-                      <button
-                        onClick={handleEmailLogin}
-                        className="rounded-xl bg-[var(--brand-blue)] px-3 py-2 text-xs font-semibold text-white"
-                      >
-                        เข้าสู่ระบบด้วยอีเมล
-                      </button>
-                    </>
-                  )}
-                  {statusMessage && (
-                    <p className="text-xs text-rose-500">{statusMessage}</p>
-                  )}
-                </div>
-                <div className="my-5 h-px bg-slate-100" />
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleSocialLogin("google")}
-                    className="flex h-12 items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm"
-                    aria-label="Google"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                    </svg>
-                    <span>Google</span>
-                  </button>
-                  <button
-                    onClick={() => handleSocialLogin("line")}
-                    className="flex h-12 items-center gap-2 rounded-xl border-2 border-[#06C755] bg-[#06C755] px-4 py-2 text-sm font-semibold text-white hover:bg-[#05b34c] transition-all shadow-sm"
-                    aria-label="Line"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                      <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
-                    </svg>
-                    <span>LINE</span>
-                  </button>
-                </div>
-                <p className="mt-4 text-[10px] text-slate-400">
-                  ทดสอบ: customer_test@gmail.com / 258369
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {chatOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-white shadow-2xl shadow-blue-900/30 sm:inset-auto sm:bottom-24 sm:right-6 sm:w-[420px] sm:rounded-3xl">
-          <div className="flex items-center justify-between bg-[var(--brand-navy)] px-4 py-3 text-white">
+        <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-white shadow-2xl shadow-slate-900/30 sm:inset-auto sm:bottom-24 sm:right-6 sm:w-[420px] sm:rounded-3xl">
+          <div className="flex items-center justify-between bg-slate-900 px-4 py-3 text-white">
             <div>
-              <p className="text-sm font-semibold">แชทกับทีมงาน</p>
+              <p className="text-sm font-semibold">
+                แชทกับทีมงาน {!isAuthed && <span className="text-xs opacity-75">(Guest)</span>}
+              </p>
               <p className="text-xs text-slate-200">
                 {connecting ? "กำลังเชื่อมต่อ..." : "ออนไลน์"}
               </p>
@@ -729,7 +545,7 @@ export default function ChatWidget() {
                   {sessionAdmins.slice(0, 4).map((admin) => (
                     <div
                       key={admin.id}
-                      className="h-6 w-6 rounded-full border-2 border-[var(--brand-navy)] bg-white text-[9px] font-semibold text-slate-600 flex items-center justify-center overflow-hidden"
+                      className="h-6 w-6 rounded-full border-2 border-slate-900 bg-white text-[9px] font-semibold text-slate-600 flex items-center justify-center overflow-hidden"
                       title={admin.name}
                     >
                       {admin.avatar ? (
@@ -748,11 +564,24 @@ export default function ChatWidget() {
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-200">
               <button onClick={() => setChatOpen(false)}>ปิด</button>
-              <span className="opacity-50">|</span>
-              <button onClick={handleLogout}>ออกจากระบบ</button>
+              {isAuthed && (
+                <>
+                  <span className="opacity-50">|</span>
+                  <button onClick={handleLogout}>ออกจากระบบ</button>
+                </>
+              )}
+              {!isAuthed && <span className="opacity-50">| Guest</span>}
             </div>
           </div>
           <div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-slate-50 px-4 py-4 text-sm sm:h-[450px] sm:flex-none">
+            {!isAuthed && (
+              <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-700">
+                <p className="font-semibold mb-1">💬 Chatting as Guest</p>
+                <p className="text-[10px] text-slate-600 leading-relaxed">
+                  You can start chatting without signing in. To continue your conversation later or access booking history, please use the Sign-in button in the top menu.
+                </p>
+              </div>
+            )}
             {messages.length === 0 && (
               <p className="text-center text-xs text-slate-400">
                 เริ่มต้นการสนทนาได้เลย
@@ -762,7 +591,7 @@ export default function ChatWidget() {
               <div
                 key={message.id}
                 className={`max-w-[80%] rounded-2xl px-3 py-2 text-xs ${message.sender === "visitor"
-                  ? "self-end bg-[var(--brand-blue)] text-white"
+                  ? "self-end bg-slate-900 text-white"
                   : "self-start bg-white text-slate-700"
                   }`}
               >
@@ -846,7 +675,7 @@ export default function ChatWidget() {
                 !input.trim() ||
                 uploadingAttachment
               }
-              className="rounded-full bg-[var(--brand-orange)] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ส่ง
             </button>

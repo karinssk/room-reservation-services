@@ -32,7 +32,17 @@ export const resolveUploadUrl = (value?: string) => {
   if (cleaned.startsWith("undefined/")) {
     cleaned = cleaned.replace("undefined", "");
   }
-  if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) return cleaned;
+  if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
+    try {
+      const parsed = new URL(cleaned);
+      if (parsed.pathname.startsWith("/uploads")) {
+        return `${backendBaseUrl || ""}${parsed.pathname}`;
+      }
+    } catch {
+      return cleaned;
+    }
+    return cleaned;
+  }
   if (cleaned.startsWith("/uploads/")) return `${backendBaseUrl || ""}${cleaned}`;
   if (cleaned.startsWith("uploads/")) return `${backendBaseUrl || ""}/${cleaned}`;
   return cleaned;

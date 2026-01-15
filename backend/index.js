@@ -85,6 +85,7 @@ app.use("/", require("./routes/rooms"));
 app.use("/", require("./routes/bookings"));
 app.use("/", require("./routes/promoCodes"));
 app.use("/", require("./routes/payments"));
+app.use("/", require("./routes/emailTemplates"));
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, db: mongoose.connection.readyState });

@@ -68,7 +68,7 @@ export default function BookingPage() {
   // Calculate nights
   const nights = Math.ceil(
     (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
-      (1000 * 60 * 60 * 24)
+    (1000 * 60 * 60 * 24)
   );
 
   useEffect(() => {
@@ -221,7 +221,7 @@ export default function BookingPage() {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => router.push(`/${locale}/rooms/${slug}?checkIn=${checkIn}&checkOut=${checkOut}`)}
+            onClick={() => router.push(`/${locale}/booking/${slug}?checkIn=${checkIn}&checkOut=${checkOut}`)}
             className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -343,7 +343,11 @@ export default function BookingPage() {
                   </div>
                   {promoValid && promoData && (
                     <p className="mt-2 text-sm text-green-600">
-                      ✓ {promoData.name} applied! You saved ฿{discount.toLocaleString()}
+                      ✓{" "}
+                      {typeof promoData.name === "string"
+                        ? promoData.name
+                        : (promoData.name as any)[locale] || (promoData.name as any)["en"]}{" "}
+                      applied! You saved ฿{discount.toLocaleString()}
                     </p>
                   )}
                 </div>

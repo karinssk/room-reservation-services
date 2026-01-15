@@ -8,6 +8,7 @@ const IndividualRoom = require("../models/IndividualRoom");
 const PaymentSetting = require("../models/PaymentSetting");
 const { resolveBaseUrl } = require("../utils/helpers");
 const { sendBookingConfirmation } = require("../utils/emailService");
+const { requireAdmin } = require("../utils/auth");
 
 const FRONTEND_URL = resolveBaseUrl(
     "FRONTEND_PRODUCTION_URL",
@@ -121,26 +122,58 @@ router.get("/payment-setting", async (_req, res) => {
     try {
         console.log("[payments] GET /payment-setting");
         const setting = await ensurePaymentSetting();
-        res.json({ setting: { provider: setting.provider } });
+        res.json({
+            setting: {
+                provider: setting.provider,
+                bankAccounts: setting.bankAccounts || [],
+                promptPayQrImage: setting.promptPayQrImage || "",
+                payOnSiteEnabled: setting.payOnSiteEnabled !== false,
+            },
+        });
     } catch (error) {
         console.error("[payments] Failed to fetch payment setting:", error);
         res.status(500).json({ error: "Failed to fetch payment setting" });
     }
 });
 
-router.put("/payment-setting", async (req, res) => {
+router.put("/payment-setting", requireAdmin, async (req, res) => {
     try {
-        console.log("[payments] PUT /payment-setting", { provider: req.body?.provider });
+        console.log("[payments] PUT /payment-setting", req.body);
         const provider = String(req.body?.provider || "").toLowerCase();
-        if (!["omise", "stripe"].includes(provider)) {
+        if (!["omise", "stripe", "manual"].includes(provider)) {
             return res.status(400).json({ error: "Invalid payment provider" });
         }
+
+        const updateData = { provider };
+
+        // Always save bank accounts and pay on site setting when provided
+        if (Array.isArray(req.body?.bankAccounts)) {
+            updateData.bankAccounts = req.body.bankAccounts.map((acc) => ({
+                bankName: String(acc.bankName || ""),
+                accountName: String(acc.accountName || ""),
+                accountNumber: String(acc.accountNumber || ""),
+            }));
+        }
+        if (typeof req.body?.promptPayQrImage === "string") {
+            updateData.promptPayQrImage = req.body.promptPayQrImage;
+        }
+        if (typeof req.body?.payOnSiteEnabled === "boolean") {
+            updateData.payOnSiteEnabled = req.body.payOnSiteEnabled;
+        }
+
         const setting = await PaymentSetting.findOneAndUpdate(
             {},
-            { $set: { provider } },
+            { $set: updateData },
             { new: true, upsert: true }
         ).lean();
-        res.json({ setting: { provider: setting.provider } });
+        res.json({
+            setting: {
+                provider: setting.provider,
+                bankAccounts: setting.bankAccounts || [],
+                promptPayQrImage: setting.promptPayQrImage || "",
+                payOnSiteEnabled: setting.payOnSiteEnabled !== false,
+            },
+        });
     } catch (error) {
         res.status(500).json({ error: "Failed to update payment setting" });
     }
@@ -600,6 +633,89 @@ router.post("/payments/omise/confirm", async (req, res) => {
     } catch (error) {
         console.error("[payments] Failed to confirm Omise payment:", error);
         res.status(500).json({ error: "Failed to confirm Omise payment" });
+    }
+});
+
+// Manual payment - submit booking with selected payment method (bank transfer or pay on site)
+router.post("/payments/manual/submit", async (req, res) => {
+    try {
+        console.log("[payments] POST /payments/manual/submit", {
+            bookingNumber: req.body?.bookingNumber,
+            method: req.body?.method,
+        });
+
+        const bookingNumber = req.body?.bookingNumber;
+        const method = req.body?.method; // "bank_transfer" or "pay_on_site"
+        const paymentSlip = req.body?.paymentSlip; // Optional payment slip image path
+
+        if (!bookingNumber) {
+            return res.status(400).json({ error: "Booking number is required" });
+        }
+        if (!["bank_transfer", "pay_on_site"].includes(method)) {
+            return res.status(400).json({ error: "Invalid payment method" });
+        }
+
+        const booking = await Booking.findOne({ bookingNumber });
+        if (!booking) {
+            return res.status(404).json({ error: "Booking not found" });
+        }
+
+        // For manual payments, we mark as pending payment (not paid yet)
+        // Admin will confirm payment later
+        booking.paymentProvider = "manual";
+        booking.paymentMethod = method;
+        booking.paymentStatus = "unpaid"; // Still unpaid until admin confirms
+        booking.status = "pending"; // Pending until payment is confirmed
+        if (paymentSlip) {
+            booking.paymentSlip = paymentSlip;
+        }
+        await booking.save();
+
+        console.log("[payments] Manual payment submitted", {
+            bookingNumber,
+            method,
+            paymentSlip: paymentSlip || null,
+        });
+        res.json({ ok: true, bookingNumber, method });
+    } catch (error) {
+        console.error("[payments] Failed to submit manual payment:", error);
+        res.status(500).json({ error: "Failed to submit manual payment" });
+    }
+});
+
+// Upload payment slip for a booking
+router.post("/payments/manual/upload-slip", async (req, res) => {
+    try {
+        console.log("[payments] POST /payments/manual/upload-slip", {
+            bookingNumber: req.body?.bookingNumber,
+        });
+
+        const bookingNumber = req.body?.bookingNumber;
+        const paymentSlip = req.body?.paymentSlip;
+
+        if (!bookingNumber) {
+            return res.status(400).json({ error: "Booking number is required" });
+        }
+        if (!paymentSlip) {
+            return res.status(400).json({ error: "Payment slip is required" });
+        }
+
+        const booking = await Booking.findOne({ bookingNumber });
+        if (!booking) {
+            return res.status(404).json({ error: "Booking not found" });
+        }
+
+        booking.paymentSlip = paymentSlip;
+        await booking.save();
+
+        console.log("[payments] Payment slip uploaded", {
+            bookingNumber,
+            paymentSlip,
+        });
+        res.json({ ok: true, bookingNumber, paymentSlip });
+    } catch (error) {
+        console.error("[payments] Failed to upload payment slip:", error);
+        res.status(500).json({ error: "Failed to upload payment slip" });
     }
 });
 

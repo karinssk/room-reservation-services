@@ -110,7 +110,7 @@ export default function RoomDetailPage() {
       <div className="mx-auto max-w-7xl px-4">
         {/* Back button */}
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push(`/${locale}/rooms`)}
           className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-700"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

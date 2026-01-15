@@ -49,9 +49,11 @@ async function fetchProducts(locale: string): Promise<ProductSummary[]> {
     }
 }
 
-async function fetchMenu() {
+async function fetchMenu(locale: string) {
     try {
-        const response = await fetch(`${backendBaseUrl}/menu`, { cache: "no-store" });
+        const response = await fetch(`${backendBaseUrl}/menu?locale=${locale}`, {
+            cache: "no-store",
+        });
         if (!response.ok) return [];
         const data = await response.json();
         return data.menu || null;
@@ -92,7 +94,7 @@ export default async function ProductsPage({
     const [categories, products, menu, footer] = await Promise.all([
         fetchCategories(),
         fetchProducts(locale),
-        fetchMenu(),
+        fetchMenu(locale),
         fetchFooter(),
     ]);
 

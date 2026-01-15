@@ -17,8 +17,8 @@ const prompt = Prompt({
 });
 
 export const metadata: Metadata = {
-  title: "RCA Aircon Express Admin",
-  description: "Admin dashboard for RCA Aircon Express",
+  title: "The Wang Yaowarat Admin",
+  description: "Admin dashboard for The Wang Yaowarat",
 };
 
 export default function RootLayout({

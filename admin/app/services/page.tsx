@@ -59,38 +59,38 @@ export default function ServicesList() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+      <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Services</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Services</h1>
+          <p className="text-xs sm:text-sm text-slate-500">
             Manage service listings and editor pages
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           <Link
             href="/services/categories"
-            className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Manage Categories
+            Categories
           </Link>
           <Link
             href="/services/new"
-            className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-full bg-blue-600 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700"
           >
             Add Service
           </Link>
         </div>
       </div>
 
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
+      <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center">
         <input
           placeholder="Search services..."
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 md:flex-1"
+          className="w-full rounded-xl sm:rounded-2xl border border-slate-200 bg-white px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-blue-500 md:flex-1"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
         <select
-          className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+          className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-blue-500"
           value={filterCategory}
           onChange={(event) => setFilterCategory(event.target.value)}
         >
@@ -103,7 +103,92 @@ export default function ServicesList() {
         </select>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      {/* Mobile Card View */}
+      <div className="space-y-3 md:hidden">
+        {filteredServices.map((service) => (
+          <div
+            key={service.id}
+            className="rounded-xl border border-slate-200 bg-white p-4"
+          >
+            {/* Header with Image and Status */}
+            <div className="mb-3 flex items-start gap-3">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
+                {service.coverImage ? (
+                  <img
+                    src={resolveUploadUrl(service.coverImage)}
+                    alt={service.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xs text-slate-300">
+                    img
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
+                  {service.title}
+                </h3>
+                <div className="text-xs text-slate-500 mb-2">
+                  /services/{service.slug}
+                </div>
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-semibold ${
+                    service.status === "published"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      service.status === "published"
+                        ? "bg-emerald-500"
+                        : "bg-amber-500"
+                    }`}
+                  />
+                  {service.status === "published" ? "Published" : "Draft"}
+                </span>
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="mb-3 flex items-center justify-between rounded-lg bg-slate-50 p-3">
+              <div>
+                <div className="text-xs font-semibold text-slate-500 mb-1">CATEGORY</div>
+                {service.category ? (
+                  <span className="inline-flex items-center rounded-md bg-white px-2 py-1 text-xs font-medium text-slate-600 border border-slate-200">
+                    {service.category.name}
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-400">-</span>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="text-xs font-semibold text-slate-500 mb-1">PRICE</div>
+                <div className="font-bold text-slate-900 text-sm">
+                  {service.price || "-"}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <Link
+              href={`/services/${service.id}`}
+              className="block text-center rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              Edit Service
+            </Link>
+          </div>
+        ))}
+        {filteredServices.length === 0 && !loading && (
+          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
+            <p className="text-xs text-slate-500">No services found.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500">

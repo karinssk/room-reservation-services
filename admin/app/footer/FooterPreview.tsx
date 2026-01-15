@@ -146,7 +146,7 @@ export default function FooterPreview({
           </div>
 
           <div>
-            <p className="text-sm font-semibold">บริการของเรา</p>
+            <p className="text-sm font-semibold">Our services</p>
             <ul className="mt-4 grid gap-2 text-sm text-white/80">
               {(footer.services || []).map((item, index) => (
                 <li key={item.id || item.label}>

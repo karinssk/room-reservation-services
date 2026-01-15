@@ -3,6 +3,7 @@ import AchievementExperience from "./AchievementExperience";
 import GalleryLightbox from "./GalleryLightbox";
 import HeroSlider from "./HeroSlider";
 import ImageSlider from "./ImageSlider";
+import HeroWithAvailableRoomsCheck from "./HeroWithAvailableRoomsCheck";
 import OurCoreServices from "./OurCoreServices";
 import OurPortfolio from "./OurPortfolio";
 import ReadyForService from "./ReadyForService";
@@ -45,6 +46,8 @@ export default function PageRenderer({ page }: { page: Page }) {
             return <Hero key={index} {...block.props} />;
           case "hero-images":
             return <HeroImages key={index} {...block.props} />;
+          case "hero-with-available-booking-check":
+            return <HeroWithAvailableRoomsCheck key={index} {...block.props} />;
           case "contact-and-services":
             return <ContactAndServices key={index} {...block.props} />;
           case "about-us-text":

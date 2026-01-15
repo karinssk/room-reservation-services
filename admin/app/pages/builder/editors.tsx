@@ -2296,6 +2296,110 @@ export function BlockEditor({
     );
   }
 
+  if (block.type === "hero-with-available-rooms-check") {
+    return (
+      <div className="mt-3 grid gap-3 text-xs text-slate-600">
+        {[
+          ["title", "Title"],
+          ["subtitle", "Subtitle"],
+          ["description", "Description"],
+          ["overlayTitle", "Overlay Title"],
+          ["overlayButtonText", "Overlay Button Text"],
+        ].map(([key, label]) => (
+          <label key={key} className="grid gap-1">
+            {label}
+            <input
+              className="rounded-xl border border-slate-200 px-3 py-2"
+              defaultValue={toLine(props[key as string] as string)}
+              onBlur={(event) =>
+                updateBlockProps(index, { [key]: event.target.value })
+              }
+            />
+          </label>
+        ))}
+        <label className="grid gap-1">
+          Background Image URL
+          <input
+            className="rounded-xl border border-slate-200 px-3 py-2"
+            defaultValue={toLine(props.backgroundImage as string)}
+            onBlur={(event) =>
+              updateBlockProps(index, { backgroundImage: event.target.value })
+            }
+          />
+        </label>
+        <label className="grid gap-1">
+          Upload Background Image
+          <input
+            type="file"
+            accept="image/*"
+            className="rounded-xl border border-slate-200 px-3 py-2"
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              const url = await uploadImage(file);
+              updateBlockProps(index, { backgroundImage: url });
+            }}
+          />
+        </label>
+        <label className="grid gap-1">
+          Title Color
+          <input
+            type="color"
+            className="h-10 w-24 rounded-xl border border-slate-200 bg-white px-2"
+            defaultValue={toLine(props.titleColor as string) || "#ffffff"}
+            onChange={(event) =>
+              updateBlockProps(index, { titleColor: event.target.value })
+            }
+          />
+        </label>
+        <label className="grid gap-1">
+          Subtitle Color
+          <input
+            type="color"
+            className="h-10 w-24 rounded-xl border border-slate-200 bg-white px-2"
+            defaultValue={toLine(props.subtitleColor as string) || "#cbd5f5"}
+            onChange={(event) =>
+              updateBlockProps(index, { subtitleColor: event.target.value })
+            }
+          />
+        </label>
+        <label className="grid gap-1">
+          Description Color
+          <input
+            type="color"
+            className="h-10 w-24 rounded-xl border border-slate-200 bg-white px-2"
+            defaultValue={toLine(props.descriptionColor as string) || "#e2e8f0"}
+            onChange={(event) =>
+              updateBlockProps(index, { descriptionColor: event.target.value })
+            }
+          />
+        </label>
+        <label className="grid gap-1">
+          Button Background
+          <input
+            type="color"
+            className="h-10 w-24 rounded-xl border border-slate-200 bg-white px-2"
+            defaultValue={toLine(props.buttonBackground as string) || "#2563eb"}
+            onChange={(event) =>
+              updateBlockProps(index, { buttonBackground: event.target.value })
+            }
+          />
+        </label>
+        <label className="grid gap-1">
+          Button Text Color
+          <input
+            type="color"
+            className="h-10 w-24 rounded-xl border border-slate-200 bg-white px-2"
+            defaultValue={toLine(props.buttonTextColor as string) || "#ffffff"}
+            onChange={(event) =>
+              updateBlockProps(index, { buttonTextColor: event.target.value })
+            }
+          />
+        </label>
+      </div>
+    );
+  }
+
   if (block.type === "contact-and-services") {
     return (
       <div className="mt-3 grid gap-3 text-xs text-slate-600">

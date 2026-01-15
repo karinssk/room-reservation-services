@@ -30,9 +30,11 @@ async function fetchPosts(query: string): Promise<PostSummary[]> {
   }
 }
 
-async function fetchMenu() {
+async function fetchMenu(locale: string) {
   try {
-    const response = await fetch(`${backendBaseUrl}/menu`, { cache: "no-store" });
+    const response = await fetch(`${backendBaseUrl}/menu?locale=${locale}`, {
+      cache: "no-store",
+    });
     if (!response.ok) return [];
     const data = await response.json();
     return data.menu || null;
@@ -61,15 +63,18 @@ export const metadata = {
 };
 
 export default async function BlogIndex({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ q?: string }>;
 }) {
-  const params = await searchParams;
-  const query = params?.q?.trim() || "";
+  const { locale } = await params;
+  const searchParamsData = await searchParams;
+  const query = searchParamsData?.q?.trim() || "";
   const [posts, menu, footer] = await Promise.all([
     fetchPosts(query),
-    fetchMenu(),
+    fetchMenu(locale),
     fetchFooter(),
   ]);
 
