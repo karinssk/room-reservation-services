@@ -230,7 +230,7 @@ router.get("/rooms/:slug", async (req, res) => {
             ? { _id: req.params.slug }
             : { slug: req.params.slug };
 
-        if (!preview) {
+        if (!isAdmin) {
             query.status = "published";
         }
 
