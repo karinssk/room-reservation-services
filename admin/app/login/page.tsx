@@ -35,7 +35,15 @@ export default function AdminLoginPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    const data = await response.json();
+    const raw = await response.text();
+    let data: any = null;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      setLoading(false);
+      setMessage(`Login failed (${response.status})`);
+      return;
+    }
     setLoading(false);
     if (response.ok && data.token) {
       window.localStorage.setItem("adminToken", data.token);
