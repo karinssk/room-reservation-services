@@ -52,6 +52,35 @@ const cancellationEditorData = {
     footerLine2: "{{hotelPhone}} | {{hotelEmail}}",
 };
 
+const pendingEditorData = {
+    headerTitle: "Payment Pending",
+    headerSubtitle: "We've received your booking at {{hotelName}}",
+    greetingLine: "Dear {{guestName}},",
+    introLine: "Please complete payment to confirm your reservation. Your booking details are below:",
+    bookingNumberLabel: "Booking Number",
+    roomDetailsTitle: "Room Details",
+    roomTypeLabel: "Room Type",
+    roomNumberLabel: "Room Number",
+    guestCountLabel: "Number of Guests",
+    stayDetailsTitle: "Stay Details",
+    checkInLabel: "Check-in",
+    checkOutLabel: "Check-out",
+    lengthOfStayLabel: "Length of Stay",
+    priceDetailsTitle: "Price Summary",
+    roomPriceLabel: "Room price",
+    discountLabel: "Discount",
+    totalLabel: "Total",
+    specialRequestsTitle: "Special Requests:",
+    checkInInfoTitle: "Check-in Information:",
+    checkInInfoLines: "• {{checkInInfo}}\n• {{checkOutInfo}}\n• Please present your booking number upon arrival\n• Early check-in and late check-out may be available upon request",
+    buttonLabel: "View Payment Details",
+    closingLine1: "If you already completed payment, please ignore this message or contact us.",
+    closingLine2: "We look forward to welcoming you!",
+    signatureLine: "{{hotelName}} Team",
+    footerLine1: "{{hotelAddress}}",
+    footerLine2: "{{hotelPhone}} | {{hotelEmail}}",
+};
+
 const bookingConfirmationHtml = `
 <!DOCTYPE html>
 <html>
@@ -357,6 +386,14 @@ const getDefaultEmailTemplate = (type) => {
             html: bookingCancellationHtml,
             staticInfo: { ...DEFAULT_STATIC_INFO },
             editorData: { ...cancellationEditorData },
+        };
+    }
+    if (type === "booking_payment_pending") {
+        return {
+            subject: "Payment Pending - {{bookingNumber}} - {{hotelName}}",
+            html: bookingConfirmationHtml,
+            staticInfo: { ...DEFAULT_STATIC_INFO },
+            editorData: { ...pendingEditorData },
         };
     }
     return null;

@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n';
+import CookieConsent from "../components/CookieConsent";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -88,6 +89,7 @@ export default async function LocaleLayout({
       <body className={`${montserrat.variable} ${prompt.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           {children}
+          <CookieConsent />
         </NextIntlClientProvider>
       </body>
     </html>

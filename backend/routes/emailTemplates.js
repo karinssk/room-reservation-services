@@ -4,7 +4,11 @@ const EmailTemplate = require("../models/EmailTemplate");
 const { requireAdmin } = require("../utils/auth");
 const { getDefaultEmailTemplate } = require("../utils/emailTemplates");
 
-const allowedTypes = new Set(["booking_confirmation", "booking_cancellation"]);
+const allowedTypes = new Set([
+    "booking_confirmation",
+    "booking_cancellation",
+    "booking_payment_pending",
+]);
 
 const ensureTemplate = async (type) => {
     const defaultTemplate = getDefaultEmailTemplate(type);

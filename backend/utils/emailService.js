@@ -54,6 +54,7 @@ const sendBookingConfirmation = async (booking, room, individualRoom = null) => 
     try {
         const transporter = createTransporter();
         const template = await getTemplate("booking_confirmation");
+        const editorData = template.editorData || {};
 
         // Calculate nights
         const checkIn = new Date(booking.checkInDate);
@@ -67,21 +68,24 @@ const sendBookingConfirmation = async (booking, room, individualRoom = null) => 
         const bookingUrl = frontendUrl
             ? `${frontendUrl}/en/my-booking?bookingNumber=${booking.bookingNumber}`
             : "";
+        const roomNumberLabel = editorData.roomNumberLabel || "Room Number";
         const roomNumberBlock = individualRoom
             ? `<div class="detail-row">
-            <span class="detail-label">Room Number</span>
+            <span class="detail-label">${roomNumberLabel}</span>
             <span class="detail-value">${individualRoom.roomNumber}${individualRoom.floor ? ` (Floor ${individualRoom.floor})` : ''}</span>
         </div>`
             : "";
+        const discountLabel = editorData.discountLabel || "Discount";
         const discountBlock = booking.discount > 0
             ? `<div class="price-row" style="color: #059669;">
-                <span>Discount${booking.promoCode ? ` (${booking.promoCode})` : ''}</span>
+                <span>${discountLabel}${booking.promoCode ? ` (${booking.promoCode})` : ''}</span>
                 <span>-฿${formatCurrency(booking.discount)}</span>
             </div>`
             : "";
+        const specialRequestsTitle = editorData.specialRequestsTitle || "Special Requests:";
         const specialRequestsBlock = booking.specialRequests
             ? `<div class="info-box">
-            <strong>Special Requests:</strong><br>
+            <strong>${specialRequestsTitle}</strong><br>
             ${booking.specialRequests}
         </div>`
             : "";
@@ -133,10 +137,12 @@ const sendBookingCancellation = async (booking, room, cancellationReason = '') =
     try {
         const transporter = createTransporter();
         const template = await getTemplate("booking_cancellation");
+        const editorData = template.editorData || {};
 
         const roomName = typeof room.name === 'string' ? room.name : room.name.en || room.name.th || 'Room';
+        const cancellationReasonLabel = editorData.cancellationReasonLabel || "Cancellation Reason";
         const cancellationReasonBlock = cancellationReason
-            ? `<p><strong>Cancellation Reason:</strong> ${cancellationReason}</p>`
+            ? `<p><strong>${cancellationReasonLabel}:</strong> ${cancellationReason}</p>`
             : "";
 
         const templateData = {
@@ -168,7 +174,85 @@ const sendBookingCancellation = async (booking, room, cancellationReason = '') =
     }
 };
 
+const sendBookingPaymentPending = async (booking, room, individualRoom = null) => {
+    try {
+        const transporter = createTransporter();
+        const template = await getTemplate("booking_payment_pending");
+        const editorData = template.editorData || {};
+
+        const checkIn = new Date(booking.checkInDate);
+        const checkOut = new Date(booking.checkOutDate);
+        const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+
+        const roomName = typeof room.name === 'string' ? room.name : room.name.en || room.name.th || 'Room';
+        const frontendUrl = resolveFrontendUrl();
+        const bookingUrl = frontendUrl
+            ? `${frontendUrl}/en/my-booking?bookingNumber=${booking.bookingNumber}`
+            : "";
+        const roomNumberLabel = editorData.roomNumberLabel || "Room Number";
+        const roomNumberBlock = individualRoom
+            ? `<div class="detail-row">
+            <span class="detail-label">${roomNumberLabel}</span>
+            <span class="detail-value">${individualRoom.roomNumber}${individualRoom.floor ? ` (Floor ${individualRoom.floor})` : ''}</span>
+        </div>`
+            : "";
+        const discountLabel = editorData.discountLabel || "Discount";
+        const discountBlock = booking.discount > 0
+            ? `<div class="price-row" style="color: #059669;">
+                <span>${discountLabel}${booking.promoCode ? ` (${booking.promoCode})` : ''}</span>
+                <span>-฿${formatCurrency(booking.discount)}</span>
+            </div>`
+            : "";
+        const specialRequestsTitle = editorData.specialRequestsTitle || "Special Requests:";
+        const specialRequestsBlock = booking.specialRequests
+            ? `<div class="info-box">
+            <strong>${specialRequestsTitle}</strong><br>
+            ${booking.specialRequests}
+        </div>`
+            : "";
+
+        const templateData = {
+            guestName: booking.guestName,
+            bookingNumber: booking.bookingNumber,
+            roomName,
+            guestCount: booking.numberOfGuests,
+            guestLabel: booking.numberOfGuests === 1 ? "guest" : "guests",
+            checkInDate: formatDate(booking.checkInDate),
+            checkOutDate: formatDate(booking.checkOutDate),
+            nights,
+            nightLabel: nights === 1 ? "night" : "nights",
+            roomPrice: formatCurrency(booking.roomPrice),
+            discount: formatCurrency(booking.discount),
+            totalPrice: formatCurrency(booking.totalPrice),
+            bookingUrl,
+            roomNumberBlock,
+            discountBlock,
+            specialRequestsBlock,
+            promoCode: booking.promoCode || "",
+            ...template.staticInfo,
+        };
+
+        const emailHtml = renderTemplate(template.html, templateData);
+        const emailSubject = renderTemplate(template.subject, templateData);
+
+        const mailOptions = {
+            from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM}>`,
+            to: booking.guestEmail,
+            subject: emailSubject,
+            html: emailHtml,
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Booking payment pending email sent:', info.messageId);
+        return { success: true, messageId: info.messageId };
+    } catch (error) {
+        console.error('Error sending payment pending email:', error);
+        return { success: false, error: error.message };
+    }
+};
+
 module.exports = {
     sendBookingConfirmation,
     sendBookingCancellation,
+    sendBookingPaymentPending,
 };

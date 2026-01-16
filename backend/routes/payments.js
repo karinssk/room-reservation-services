@@ -7,7 +7,7 @@ const Room = require("../models/Room");
 const IndividualRoom = require("../models/IndividualRoom");
 const PaymentSetting = require("../models/PaymentSetting");
 const { resolveBaseUrl } = require("../utils/helpers");
-const { sendBookingConfirmation } = require("../utils/emailService");
+const { sendBookingConfirmation, sendBookingPaymentPending } = require("../utils/emailService");
 const { requireAdmin } = require("../utils/auth");
 
 const FRONTEND_URL = resolveBaseUrl(
@@ -670,6 +670,18 @@ router.post("/payments/manual/submit", async (req, res) => {
             booking.paymentSlip = paymentSlip;
         }
         await booking.save();
+
+        try {
+            const room = await Room.findById(booking.roomTypeId).lean();
+            const individualRoom = booking.individualRoomId
+                ? await IndividualRoom.findById(booking.individualRoomId).lean()
+                : null;
+            if (room) {
+                await sendBookingPaymentPending(booking.toObject(), room, individualRoom);
+            }
+        } catch (emailError) {
+            console.error("[payments] Failed to send manual payment confirmation email:", emailError);
+        }
 
         console.log("[payments] Manual payment submitted", {
             bookingNumber,

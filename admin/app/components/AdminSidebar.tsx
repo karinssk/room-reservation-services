@@ -49,6 +49,7 @@ const fallbackAdminMenu: MenuItem[] = [
       { id: "quick-links", label: "Quick Links", href: "/quick-links", permission: "everyone" },
       { id: "payment-setting", label: "Payment Setting", href: "/payment-setting", permission: "everyone" },
       { id: "email-templates", label: "Email Templates", href: "/email-templates", permission: "everyone" },
+      { id: "popup-image", label: "Popup Image", href: "/popup-image", permission: "everyone" },
       { id: "admin-menu", label: "Admin Menu", href: "/admin-menu", permission: "owner-only" },
       { id: "profile", label: "Profile", href: "/profile", permission: "everyone" },
       { id: "admin-users", label: "Admin Approvals", href: "/admin-users", permission: "owner-only" },
@@ -80,6 +81,7 @@ const iconMap: Record<string, string> = {
   "admin-users": "M7 9h10M7 13h10M7 17h6",
   "payment-setting": "M5 12h14M12 5v14",
   "email-templates": "M4 6h16M4 12h16M4 18h8",
+  "popup-image": "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z",
   settings: "M12 4l2 2 3-1 1 3 3 1-1 3 2 2-2 2 1 3-3 1-1 3-3-1-2 2-2-2-3 1-1-3-3-1 1-3-2-2 2-2-1-3 3-1 1-3 3 1z",
 };
 
@@ -200,7 +202,7 @@ export default function AdminSidebar() {
 
   return (
     <aside
-      className={`${collapsed ? "w-20" : "w-72"} flex flex-col min-h-screen rounded-[28px] bg-white px-4 py-5 shadow-lg transition-all`}
+      className={`${collapsed ? "w-20" : "w-72"} hidden lg:flex flex-col min-h-screen bg-white px-4 py-5 shadow-lg transition-all border-r border-slate-100/50`}
     >
       <div className="flex items-center justify-between gap-2">
         {!collapsed && (
@@ -401,6 +403,6 @@ export default function AdminSidebar() {
           </button>
         )}
       </div>
-    </aside>
+    </aside >
   );
 }

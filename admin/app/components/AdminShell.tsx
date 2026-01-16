@@ -87,9 +87,7 @@ export default function AdminShell({ children, mainClassName }: AdminShellProps)
   return (
     <div className="flex min-h-screen bg-slate-100">
       {/* Hide sidebar on mobile, show on desktop */}
-      <div className="hidden lg:block">
-        <AdminSidebar />
-      </div>
+      <AdminSidebar />
       <main className={`flex-1 ${mainClassName || "px-4 py-6 lg:px-8 lg:py-10"} pb-20 sm:pb-6 lg:pb-10`}>
         {children}
       </main>
