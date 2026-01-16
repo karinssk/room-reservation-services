@@ -1,5 +1,9 @@
-export const getAdminAuthHeaders = () => {
-  if (typeof window === "undefined") return {};
+export const getAdminAuthHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  if (typeof window === "undefined") return headers;
   const token = window.localStorage.getItem("adminToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Link } from "@/lib/navigation";
 
 export default function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
@@ -30,7 +31,13 @@ export default function CookieConsent() {
         <div className="flex-1 text-center sm:text-left">
           <p className="text-sm text-gray-700 sm:text-base">
             We use cookies to enhance your browsing experience and analyze our traffic.
-            By clicking &quot;Accept&quot;, you consent to our use of cookies.
+            By clicking &quot;Accept&quot;, you consent to our use of cookies.{" "}
+            <Link
+              href="/privacy-policy"
+              className="text-blue-600 underline hover:text-blue-800"
+            >
+              Privacy Policy
+            </Link>
           </p>
         </div>
         <div className="flex shrink-0 gap-3">
