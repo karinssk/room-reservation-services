@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
   const handleLogin = async () => {
     setLoading(true);
     setMessage(null);
-    const response = await fetch(`${backendBaseUrl}/admin/login`, {
+    const response = await fetch(`${backendBaseUrl}/auth/staff-signin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),

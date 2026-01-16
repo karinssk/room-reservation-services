@@ -13,8 +13,8 @@ const {
     resolveAdminRedirect,
 } = require("../utils/helpers");
 
-// Login
-router.post("/admin/login", async (req, res) => {
+// Login (renamed from /admin/login to avoid ad blockers)
+router.post("/auth/staff-signin", async (req, res) => {
     const email = String(req.body?.email || "").trim().toLowerCase();
     const password = String(req.body?.password || "");
     if (!email || !password) {
