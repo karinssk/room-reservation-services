@@ -22,8 +22,8 @@ const toPublicSession = (session) => ({
     authProvider: session.authProvider,
     status: session.status,
     assignedAdminId: session.assignedAdminId,
-    createdAt: session.createdAt ? session.createdAt.toISOString() : null,
-    lastMessageAt: session.lastMessageAt ? session.lastMessageAt.toISOString() : null,
+    createdAt: session.createdAt ? new Date(session.createdAt).toISOString() : null,
+    lastMessageAt: session.lastMessageAt ? new Date(session.lastMessageAt).toISOString() : null,
     messageCount: session.messages?.length || 0,
 });
 
@@ -198,21 +198,21 @@ module.exports = (io, adminPresence) => {
         const trimmedText = typeof text === "string" ? text.trim() : "";
         const safeAttachments = Array.isArray(attachments)
             ? attachments
-                  .map((item) => ({
-                      id: String(item?.id || ""),
-                      url: String(item?.url || ""),
-                      filename: String(item?.filename || ""),
-                      mime: String(item?.mime || ""),
-                      size: Number(item?.size || 0),
-                  }))
-                  .filter(
-                      (item) =>
-                          item.id &&
-                          item.url &&
-                          item.filename &&
-                          item.mime &&
-                          Number.isFinite(item.size)
-                  )
+                .map((item) => ({
+                    id: String(item?.id || ""),
+                    url: String(item?.url || ""),
+                    filename: String(item?.filename || ""),
+                    mime: String(item?.mime || ""),
+                    size: Number(item?.size || 0),
+                }))
+                .filter(
+                    (item) =>
+                        item.id &&
+                        item.url &&
+                        item.filename &&
+                        item.mime &&
+                        Number.isFinite(item.size)
+                )
             : [];
         if (!trimmedText && safeAttachments.length === 0) {
             return res.status(400).json({ error: "Missing message content" });
