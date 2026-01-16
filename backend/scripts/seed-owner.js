@@ -6,7 +6,10 @@ require("dotenv").config();
 const seedOwner = async () => {
   try {
     console.log("Connecting to MongoDB...");
-    await mongoose.connect(process.env.MONGO_URI);
+    const mongoUri =
+        process.env.MONGO_URI ||
+        "mongodb://admin:asggesfsdfewews552266955sopkjf@127.0.0.1:27017/room-reservation-services?authSource=admin";
+    await mongoose.connect(mongoUri);
     console.log("Connected.");
 
     const email = "thewang_owner@gmail.com";
