@@ -51,7 +51,7 @@ const SheetCustomizePage = () => {
         setLoading(true);
         setError(null);
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api-rca-aircon-express.fastforwardssl.com';
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.thewangyaowarat.com/';
             const res = await fetch(`${backendUrl}/api/sheets/${spreadsheetId}?range=${encodeURIComponent(range)}`);
 
             if (!res.ok) throw new Error('Failed to fetch sheet data');
@@ -100,7 +100,7 @@ const SheetCustomizePage = () => {
 
         try {
             setSaving(true);
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api-rca-aircon-express.fastforwardssl.com';
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.thewangyaowarat.com/';
 
             for (const index of indexes) {
                 const row = newRows[index];

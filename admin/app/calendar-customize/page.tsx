@@ -772,7 +772,7 @@ const CalendarCustomizePage = () => {
     const fetchEvents = async () => {
         try {
             setLoading(true);
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api-rca-aircon-express.fastforwardssl.com';
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.thewangyaowarat.com/';
             const res = await fetch(`${backendUrl}/api/calendar/events`);
 
             if (!res.ok) throw new Error('Failed to fetch events');
@@ -817,7 +817,7 @@ const CalendarCustomizePage = () => {
     const handleDeleteEvent = async (eventId: string, calendarId: string) => {
         if (!confirm('Are you sure you want to delete this event?')) return;
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api-rca-aircon-express.fastforwardssl.com';
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.thewangyaowarat.com/';
             const res = await fetch(`${backendUrl}/api/calendar/events/${eventId}?calendarId=${encodeURIComponent(calendarId)}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete event');
             fetchEvents();
@@ -834,7 +834,7 @@ const CalendarCustomizePage = () => {
 
     const handleUpdateEvent = async (id: string, data: any) => {
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api-rca-aircon-express.fastforwardssl.com';
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.thewangyaowarat.com/';
 
             // Map flat data back to Google Resource structure
             const resource: any = {
@@ -905,7 +905,7 @@ const CalendarCustomizePage = () => {
         if (!data.title || !creationSlot) return;
 
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api-rca-aircon-express.fastforwardssl.com';
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.thewangyaowarat.com/';
             const newEvent = {
                 summary: data.title,
                 start: data.allDay
