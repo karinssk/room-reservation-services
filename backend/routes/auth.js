@@ -286,57 +286,57 @@ router.get("/auth/google/callback", async (req, res) => {
         return res.redirect(`${returnUrl}?auth_error=missing_code`);
     }
 
-}
-    
+
+
     const redirectUri = `${process.env.BACKEND_URL}/auth/google/callback`;
-console.log("[/auth/google/callback] Verifying with Redirect URI:", redirectUri);
-console.log("[/auth/google/callback] Code:", code ? "Received" : "Missing");
+    console.log("[/auth/google/callback] Verifying with Redirect URI:", redirectUri);
+    console.log("[/auth/google/callback] Code:", code ? "Received" : "Missing");
 
-try {
-    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            code: String(code),
-            client_id: process.env.GOOGLE_CLIENT_ID || "",
-            client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
-            redirect_uri: redirectUri,
-            grant_type: "authorization_code",
-        }),
-    });
+    try {
+        const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                code: String(code),
+                client_id: process.env.GOOGLE_CLIENT_ID || "",
+                client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
+                redirect_uri: redirectUri,
+                grant_type: "authorization_code",
+            }),
+        });
 
-    const tokenData = await tokenResponse.json();
-    if (!tokenResponse.ok) {
-        return res.redirect(`${returnUrl}?auth_error=oauth_failed`);
-    }
-
-    const userResponse = await fetch(
-        "https://www.googleapis.com/oauth2/v2/userinfo",
-        {
-            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        const tokenData = await tokenResponse.json();
+        if (!tokenResponse.ok) {
+            return res.redirect(`${returnUrl}?auth_error=oauth_failed`);
         }
-    );
-    const userData = await userResponse.json();
-    const email = String(userData.email || "").toLowerCase();
-    const name = userData.name || "";
 
-    if (!email) {
-        return res.redirect(`${returnUrl}?auth_error=missing_email`);
+        const userResponse = await fetch(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            {
+                headers: { Authorization: `Bearer ${tokenData.access_token}` },
+            }
+        );
+        const userData = await userResponse.json();
+        const email = String(userData.email || "").toLowerCase();
+        const name = userData.name || "";
+
+        if (!email) {
+            return res.redirect(`${returnUrl}?auth_error=missing_email`);
+        }
+
+        // Store customer auth in session/cookie or return as query params
+        const authData = Buffer.from(JSON.stringify({
+            provider: "google",
+            email,
+            name,
+            picture: userData.picture
+        })).toString('base64');
+
+        res.redirect(`${returnUrl}?auth_success=true&auth_data=${authData}`);
+    } catch (error) {
+        console.error("Google OAuth error:", error);
+        res.redirect(`${returnUrl}?auth_error=oauth_error`);
     }
-
-    // Store customer auth in session/cookie or return as query params
-    const authData = Buffer.from(JSON.stringify({
-        provider: "google",
-        email,
-        name,
-        picture: userData.picture
-    })).toString('base64');
-
-    res.redirect(`${returnUrl}?auth_success=true&auth_data=${authData}`);
-} catch (error) {
-    console.error("Google OAuth error:", error);
-    res.redirect(`${returnUrl}?auth_error=oauth_error`);
-}
 });
 
 // Customer LINE OAuth
