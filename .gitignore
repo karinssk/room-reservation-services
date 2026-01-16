@@ -35,7 +35,7 @@ yarn-error.log*
 *.pem
 
 # backend uploads (runtime assets)
-/backend/uploads
+
 
 # local editor/tooling
 /.vscode
