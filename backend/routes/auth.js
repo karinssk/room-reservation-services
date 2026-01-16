@@ -13,6 +13,16 @@ const {
     resolveAdminRedirect,
 } = require("../utils/helpers");
 
+// --- DEBUG: Check Environment Variables ---
+console.log("--- AUTH ROUTE ENV DEBUG ---");
+console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID ? "Loaded" : "MISSING");
+console.log("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? "Loaded" : "MISSING");
+console.log("BACKEND_URL:", process.env.BACKEND_URL);
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+console.log("ADMIN_URL:", process.env.ADMIN_URL);
+console.log("----------------------------");
+// -----------------------------------------
+
 // Login (renamed from /admin/login to avoid ad blockers)
 router.post("/auth/staff-signin", async (req, res) => {
     const email = String(req.body?.email || "").trim().toLowerCase();
@@ -80,6 +90,7 @@ router.post("/admin/oauth", async (req, res) => {
 // Google OAuth
 router.get("/api/auth/google", (_req, res) => {
     const redirectUri = getOAuthRedirectUrl("google", process.env.BACKEND_URL);
+    console.log("[/api/auth/google] Redirect URI:", redirectUri);
     const query = new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID || "",
         redirect_uri: redirectUri,
@@ -242,6 +253,9 @@ router.patch("/admin/me", requireAdmin, async (req, res) => {
 router.get("/auth/google", (_req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     const redirectUri = `${process.env.BACKEND_URL}/auth/google/callback`;
+    console.log("[/auth/google] Customer Redirect URI:", redirectUri);
+    console.log("[/auth/google] Client ID:", process.env.GOOGLE_CLIENT_ID);
+
     const query = new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID || "",
         redirect_uri: redirectUri,
@@ -272,53 +286,57 @@ router.get("/auth/google/callback", async (req, res) => {
         return res.redirect(`${returnUrl}?auth_error=missing_code`);
     }
 
+}
+    
     const redirectUri = `${process.env.BACKEND_URL}/auth/google/callback`;
+console.log("[/auth/google/callback] Verifying with Redirect URI:", redirectUri);
+console.log("[/auth/google/callback] Code:", code ? "Received" : "Missing");
 
-    try {
-        const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                code: String(code),
-                client_id: process.env.GOOGLE_CLIENT_ID || "",
-                client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
-                redirect_uri: redirectUri,
-                grant_type: "authorization_code",
-            }),
-        });
+try {
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            code: String(code),
+            client_id: process.env.GOOGLE_CLIENT_ID || "",
+            client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
+            redirect_uri: redirectUri,
+            grant_type: "authorization_code",
+        }),
+    });
 
-        const tokenData = await tokenResponse.json();
-        if (!tokenResponse.ok) {
-            return res.redirect(`${returnUrl}?auth_error=oauth_failed`);
-        }
-
-        const userResponse = await fetch(
-            "https://www.googleapis.com/oauth2/v2/userinfo",
-            {
-                headers: { Authorization: `Bearer ${tokenData.access_token}` },
-            }
-        );
-        const userData = await userResponse.json();
-        const email = String(userData.email || "").toLowerCase();
-        const name = userData.name || "";
-
-        if (!email) {
-            return res.redirect(`${returnUrl}?auth_error=missing_email`);
-        }
-
-        // Store customer auth in session/cookie or return as query params
-        const authData = Buffer.from(JSON.stringify({
-            provider: "google",
-            email,
-            name,
-            picture: userData.picture
-        })).toString('base64');
-
-        res.redirect(`${returnUrl}?auth_success=true&auth_data=${authData}`);
-    } catch (error) {
-        console.error("Google OAuth error:", error);
-        res.redirect(`${returnUrl}?auth_error=oauth_error`);
+    const tokenData = await tokenResponse.json();
+    if (!tokenResponse.ok) {
+        return res.redirect(`${returnUrl}?auth_error=oauth_failed`);
     }
+
+    const userResponse = await fetch(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        }
+    );
+    const userData = await userResponse.json();
+    const email = String(userData.email || "").toLowerCase();
+    const name = userData.name || "";
+
+    if (!email) {
+        return res.redirect(`${returnUrl}?auth_error=missing_email`);
+    }
+
+    // Store customer auth in session/cookie or return as query params
+    const authData = Buffer.from(JSON.stringify({
+        provider: "google",
+        email,
+        name,
+        picture: userData.picture
+    })).toString('base64');
+
+    res.redirect(`${returnUrl}?auth_success=true&auth_data=${authData}`);
+} catch (error) {
+    console.error("Google OAuth error:", error);
+    res.redirect(`${returnUrl}?auth_error=oauth_error`);
+}
 });
 
 // Customer LINE OAuth
@@ -395,6 +413,95 @@ router.get("/auth/line/callback", async (req, res) => {
     } catch (error) {
         console.error("LINE OAuth error:", error);
         res.redirect(`${returnUrl}?auth_error=oauth_error`);
+    }
+});
+
+// Customer Local Auth
+router.post("/auth/customer/register", async (req, res) => {
+    try {
+        const { email, password, confirmPassword } = req.body;
+
+        if (!email || !password || !confirmPassword) {
+            return res.status(400).json({ error: "All fields are required" });
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({ error: "Passwords do not match" });
+        }
+
+        const normalizedEmail = String(email).trim().toLowerCase();
+
+        // Check existing
+        const existing = await require("../models/Customer").findOne({ email: normalizedEmail });
+        if (existing) {
+            return res.status(400).json({ error: "Email already registered" });
+        }
+
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        const customer = await require("../models/Customer").create({
+            email: normalizedEmail,
+            passwordHash,
+            provider: "local"
+        });
+
+        // Use separate signing function if possible, but for MVP we reuse similar logic or define new
+        // Ideally we should import a function to sign customer tokens
+        // For now, let's assume a simple payload
+        const jwt = require("jsonwebtoken");
+        const token = jwt.sign(
+            { id: customer._id, role: "customer", email: customer.email },
+            process.env.JWT_SECRET || "supersecret",
+            { expiresIn: "7d" }
+        );
+
+        res.json({
+            ok: true,
+            token,
+            user: { id: customer._id, email: customer.email, name: customer.name }
+        });
+
+    } catch (error) {
+        console.error("Register Error:", error);
+        res.status(500).json({ error: "Registration failed" });
+    }
+});
+
+router.post("/auth/customer/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password required" });
+        }
+
+        const normalizedEmail = String(email).trim().toLowerCase();
+        const customer = await require("../models/Customer").findOne({ email: normalizedEmail });
+
+        if (!customer || !customer.passwordHash) {
+            return res.status(400).json({ error: "Invalid email or password" });
+        }
+
+        const valid = await bcrypt.compare(password, customer.passwordHash);
+        if (!valid) {
+            return res.status(400).json({ error: "Invalid email or password" });
+        }
+
+        const jwt = require("jsonwebtoken");
+        const token = jwt.sign(
+            { id: customer._id, role: "customer", email: customer.email },
+            process.env.JWT_SECRET || "supersecret",
+            { expiresIn: "7d" }
+        );
+
+        res.json({
+            ok: true,
+            token,
+            user: { id: customer._id, email: customer.email, name: customer.name }
+        });
+
+    } catch (error) {
+        console.error("Login Error:", error);
+        res.status(500).json({ error: "Login failed" });
     }
 });
 

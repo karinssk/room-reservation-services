@@ -97,11 +97,10 @@ function NavDropdownItem({ item }: { item: NavItem }) {
       </Link>
       {hasChildren && (
         <div
-          className={`absolute left-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 text-slate-700 shadow-2xl transition-all duration-200 ${
-            isOpen
-              ? "pointer-events-auto translate-y-0 opacity-100"
-              : "pointer-events-none translate-y-1 opacity-0"
-          }`}
+          className={`absolute left-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 text-slate-700 shadow-2xl transition-all duration-200 ${isOpen
+            ? "pointer-events-auto translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-1 opacity-0"
+            }`}
         >
           <div className="grid gap-1">
             {item.children!.map((child) => (
@@ -138,23 +137,36 @@ export default function Navbar({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const handleEmailLogin = async () => {
-    const isValid =
-      email.trim().toLowerCase() === "customer_test@gmail.com" &&
-      password === "258369";
-    if (!isValid) {
-      setStatusMessage("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-      return;
-    }
-    const cleanEmail = email.trim().toLowerCase();
+    setStatusMessage("กำลังเข้าสู่ระบบ...");
+    try {
+      const res = await fetch(`${backendBaseUrl}/auth/customer/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("customerAuth", "true");
-      window.localStorage.setItem("customerEmail", cleanEmail);
-      window.localStorage.removeItem("customerProvider");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setStatusMessage(data.error || "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("customerAuth", "true");
+        window.localStorage.setItem("customerToken", data.token);
+        window.localStorage.setItem("customerEmail", data.user.email);
+        window.localStorage.removeItem("customerProvider");
+      }
+
+      setAuthOpen(false);
+      setStatusMessage("เข้าสู่ระบบสำเร็จ");
+      setTimeout(() => setStatusMessage(null), 2000);
+      router.refresh(); // Refund page state
+    } catch (error) {
+      console.error("Login failed", error);
+      setStatusMessage("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
     }
-    setAuthOpen(false);
-    setStatusMessage("เข้าสู่ระบบสำเร็จ");
-    setTimeout(() => setStatusMessage(null), 2000);
   };
 
   const handleRegister = async () => {
@@ -170,12 +182,40 @@ export default function Navbar({
       setStatusMessage("รหัสผ่านไม่ตรงกัน");
       return;
     }
-    // TODO: Implement actual registration API call
-    setStatusMessage("สมัครสมาชิกสำเร็จ");
-    setTimeout(() => {
-      setStatusMessage(null);
-      setAuthMode("login");
-    }, 2000);
+
+    setStatusMessage("กำลังสมัครสมาชิก...");
+    try {
+      const res = await fetch(`${backendBaseUrl}/auth/customer/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, confirmPassword }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setStatusMessage(data.error || "ไม่สามารถสมัครสมาชิกได้");
+        return;
+      }
+
+      // Auto login after register
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("customerAuth", "true");
+        window.localStorage.setItem("customerToken", data.token);
+        window.localStorage.setItem("customerEmail", data.user.email);
+        window.localStorage.removeItem("customerProvider");
+      }
+
+      setStatusMessage("สมัครสมาชิกสำเร็จ");
+      setTimeout(() => {
+        setStatusMessage(null);
+        setAuthOpen(false); // Close modal on success
+      }, 1500);
+      router.refresh();
+    } catch (error) {
+      console.error("Register failed", error);
+      setStatusMessage("เกิดข้อผิดพลาดในการสมัครสมาชิก");
+    }
   };
 
   const resetAuthForm = () => {
@@ -240,9 +280,8 @@ export default function Navbar({
                     <button
                       key={lng}
                       onClick={() => handleLanguageChange(lng)}
-                      className={`w-full rounded-lg px-2 py-1 text-left uppercase ${
-                        lng === locale ? "bg-slate-900 text-white" : "hover:bg-slate-100"
-                      }`}
+                      className={`w-full rounded-lg px-2 py-1 text-left uppercase ${lng === locale ? "bg-slate-900 text-white" : "hover:bg-slate-100"
+                        }`}
                     >
                       {lng}
                     </button>
@@ -278,9 +317,8 @@ export default function Navbar({
                     <button
                       key={lng}
                       onClick={() => handleLanguageChange(lng)}
-                      className={`w-full rounded-lg px-2 py-1 text-left uppercase ${
-                        lng === locale ? "bg-slate-900 text-white" : "hover:bg-slate-100"
-                      }`}
+                      className={`w-full rounded-lg px-2 py-1 text-left uppercase ${lng === locale ? "bg-slate-900 text-white" : "hover:bg-slate-100"
+                        }`}
                     >
                       {lng}
                     </button>
@@ -391,11 +429,10 @@ export default function Navbar({
                       setAuthMode("login");
                       resetAuthForm();
                     }}
-                    className={`pb-3 text-sm font-semibold transition-colors ${
-                      authMode === "login"
-                        ? "border-b-2 border-slate-900 text-slate-900"
-                        : "text-slate-400 hover:text-slate-600"
-                    }`}
+                    className={`pb-3 text-sm font-semibold transition-colors ${authMode === "login"
+                      ? "border-b-2 border-slate-900 text-slate-900"
+                      : "text-slate-400 hover:text-slate-600"
+                      }`}
                   >
                     เข้าสู่ระบบ
                   </button>
@@ -404,11 +441,10 @@ export default function Navbar({
                       setAuthMode("register");
                       resetAuthForm();
                     }}
-                    className={`pb-3 text-sm font-semibold transition-colors ${
-                      authMode === "register"
-                        ? "border-b-2 border-slate-900 text-slate-900"
-                        : "text-slate-400 hover:text-slate-600"
-                    }`}
+                    className={`pb-3 text-sm font-semibold transition-colors ${authMode === "register"
+                      ? "border-b-2 border-slate-900 text-slate-900"
+                      : "text-slate-400 hover:text-slate-600"
+                      }`}
                   >
                     สมัครสมาชิก
                   </button>
@@ -482,9 +518,7 @@ export default function Navbar({
                         </p>
                       )}
                     </div>
-                    <p className="mt-4 text-[10px] text-slate-400">
-                      ทดสอบ: customer_test@gmail.com / 258369
-                    </p>
+
                   </>
                 ) : (
                   <>
