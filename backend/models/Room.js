@@ -36,6 +36,9 @@ const roomSchema = new mongoose.Schema(
 
         // Room Details
         maxGuests: { type: Number, default: 2 },
+        maxAdults: { type: Number, default: 2 },
+        maxChildren: { type: Number, default: 0 },
+        maxChildAge: { type: Number, default: 12 }, // Age limit for children (e.g., 12 years)
         size: { type: String, default: "" }, // "32 sq mtr"
         description: { type: mongoose.Schema.Types.Mixed, default: "" }, // Long description
         shortDescription: { type: mongoose.Schema.Types.Mixed, default: "" },

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { backendBaseUrl } from "@/lib/urls";
 import ImageUpload from "@/components/ImageUpload";
 import MultipleImageUpload from "@/components/MultipleImageUpload";
+import { Toast } from "@/utils/sweetAlert";
 
 const API_URL = backendBaseUrl;
 
@@ -21,6 +22,10 @@ type Room = {
   status: "draft" | "published";
   categoryId?: string;
   maxGuests: number;
+
+  maxAdults?: number;
+  maxChildren?: number;
+  maxChildAge?: number;
   size?: string;
   description: { th: string; en: string } | string;
   shortDescription: { th: string; en: string } | string;
@@ -71,6 +76,9 @@ export default function EditRoomPage() {
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [categoryId, setCategoryId] = useState("");
   const [maxGuests, setMaxGuests] = useState(2);
+  const [maxAdults, setMaxAdults] = useState(2);
+  const [maxChildren, setMaxChildren] = useState(0);
+  const [maxChildAge, setMaxChildAge] = useState<number | "">("");
   const [size, setSize] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
   const [descriptionTh, setDescriptionTh] = useState("");
@@ -105,7 +113,10 @@ export default function EditRoomPage() {
       const roomMatch = roomsData.rooms?.find((r: any) => r.id === roomId);
 
       if (!roomMatch) {
-        alert("Room not found");
+        Toast.fire({
+          icon: "error",
+          title: "Room not found",
+        });
         router.push("/rooms");
         return;
       }
@@ -116,7 +127,10 @@ export default function EditRoomPage() {
       ]);
 
       if (!roomRes.ok) {
-        alert("Room not found");
+        Toast.fire({
+          icon: "error",
+          title: "Room not found",
+        });
         router.push("/rooms");
         return;
       }
@@ -145,6 +159,9 @@ export default function EditRoomPage() {
       setStatus(roomRecord.status || "draft");
       setCategoryId(roomRecord.categoryId || "");
       setMaxGuests(roomRecord.maxGuests || 2);
+      setMaxAdults(roomRecord.maxAdults || 2);
+      setMaxChildren(roomRecord.maxChildren || 0);
+      setMaxChildAge(roomRecord.maxChildAge ?? "");
       setSize(roomRecord.size || "");
       setDescriptionEn(description?.en || "");
       setDescriptionTh(description?.th || "");
@@ -171,7 +188,10 @@ export default function EditRoomPage() {
       });
     } catch (error) {
       console.error("Failed to load data:", error);
-      alert("Failed to load room data");
+      Toast.fire({
+        icon: "error",
+        title: "Failed to load room data",
+      });
     } finally {
       setLoading(false);
     }
@@ -230,6 +250,9 @@ export default function EditRoomPage() {
         status,
         categoryId: categoryId || null,
         maxGuests,
+        maxAdults,
+        maxChildren,
+        maxChildAge: maxChildAge === "" ? undefined : Number(maxChildAge),
         size,
         description: { th: descriptionTh, en: descriptionEn },
         shortDescription: { th: shortDescriptionTh, en: shortDescriptionEn },
@@ -254,15 +277,24 @@ export default function EditRoomPage() {
       });
 
       if (res.ok) {
-        alert("Room updated successfully!");
+        Toast.fire({
+          icon: "success",
+          title: "Room updated successfully",
+        });
         router.push("/rooms");
       } else {
         const error = await res.json();
-        alert(error.error || "Failed to update room");
+        Toast.fire({
+          icon: "error",
+          title: error.error || "Failed to update room",
+        });
       }
     } catch (error) {
       console.error("Error updating room:", error);
-      alert("Failed to update room");
+      Toast.fire({
+        icon: "error",
+        title: "Failed to update room",
+      });
     } finally {
       setSaving(false);
     }
@@ -304,22 +336,20 @@ export default function EditRoomPage() {
           <button
             type="button"
             onClick={() => setActiveTab("en")}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-              activeTab === "en"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-            }`}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold ${activeTab === "en"
+              ? "bg-blue-600 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
           >
             🇬🇧 English
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("th")}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-              activeTab === "th"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-            }`}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold ${activeTab === "th"
+              ? "bg-blue-600 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
           >
             🇹🇭 Thai
           </button>
@@ -411,6 +441,50 @@ export default function EditRoomPage() {
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
                 min="1"
                 required
+              />
+            </div>
+
+            {/* Max Adults */}
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">
+                Max Adults *
+              </label>
+              <input
+                type="number"
+                value={maxAdults}
+                onChange={(e) => setMaxAdults(Number(e.target.value))}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
+                min="1"
+                required
+              />
+            </div>
+
+            {/* Max Children */}
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">
+                Max Children
+              </label>
+              <input
+                type="number"
+                value={maxChildren}
+                onChange={(e) => setMaxChildren(Number(e.target.value))}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
+                min="0"
+              />
+            </div>
+
+            {/* Max Child Age */}
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">
+                Max Child Age (Years)
+              </label>
+              <input
+                type="number"
+                value={maxChildAge}
+                onChange={(e) => setMaxChildAge(e.target.value === "" ? "" : Number(e.target.value))}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
+                min="0"
+                placeholder="e.g. 12"
               />
             </div>
 

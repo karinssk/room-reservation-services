@@ -85,13 +85,11 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
-      <body className={`${montserrat.variable} ${prompt.variable} antialiased`}>
-        <NextIntlClientProvider messages={messages}>
-          {children}
-          <CookieConsent />
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <div className={`${montserrat.variable} ${prompt.variable} antialiased`}>
+      <NextIntlClientProvider messages={messages}>
+        {children}
+        <CookieConsent />
+      </NextIntlClientProvider>
+    </div>
   );
 }

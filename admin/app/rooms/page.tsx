@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { backendBaseUrl, resolveUploadUrl } from "@/lib/urls";
+import { Toast, ConfirmDelete } from "@/utils/sweetAlert";
 
 const API_URL = backendBaseUrl;
 
@@ -59,20 +60,34 @@ export default function RoomsList() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this room?")) return;
+    const result = await ConfirmDelete.fire({
+      text: "This will permanently delete the room and all its data.",
+    });
 
-    try {
-      const res = await fetch(`${API_URL}/rooms/${id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setRooms(rooms.filter((room) => room.id !== id));
-      } else {
-        alert("Failed to delete room");
+    if (result.isConfirmed) {
+      try {
+        const res = await fetch(`${API_URL}/rooms/${id}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          setRooms(rooms.filter((room) => room.id !== id));
+          Toast.fire({
+            icon: "success",
+            title: "Room deleted successfully",
+          });
+        } else {
+          Toast.fire({
+            icon: "error",
+            title: "Failed to delete room",
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting room:", error);
+        Toast.fire({
+          icon: "error",
+          title: "Failed to delete room",
+        });
       }
-    } catch (error) {
-      console.error("Error deleting room:", error);
-      alert("Failed to delete room");
     }
   };
 
@@ -200,11 +215,10 @@ export default function RoomsList() {
                           </span>
                         )}
                         <span
-                          className={`rounded-full px-2 py-0.5 ${
-                            room.status === "published"
+                          className={`rounded-full px-2 py-0.5 ${room.status === "published"
                               ? "bg-green-100 text-green-700"
                               : "bg-yellow-100 text-yellow-700"
-                          }`}
+                            }`}
                         >
                           {room.status}
                         </span>

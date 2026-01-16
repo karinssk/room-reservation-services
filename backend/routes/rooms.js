@@ -183,6 +183,9 @@ router.get("/rooms", async (req, res) => {
                     }
                     : null,
                 maxGuests: room.maxGuests,
+                maxAdults: room.maxAdults,
+                maxChildren: room.maxChildren,
+                maxChildAge: room.maxChildAge,
                 size: room.size,
                 description: room.description,
                 shortDescription: room.shortDescription,
@@ -289,6 +292,9 @@ router.post("/rooms", async (req, res) => {
             status,
             categoryId: req.body?.categoryId || null,
             maxGuests: Number(req.body?.maxGuests || 2),
+            maxAdults: Number(req.body?.maxAdults || 2),
+            maxChildren: Number(req.body?.maxChildren || 0),
+            maxChildAge: req.body?.maxChildAge !== undefined ? Number(req.body.maxChildAge) : 12,
             size: req.body?.size || "",
             description: req.body?.description || "",
             shortDescription: req.body?.shortDescription || "",
@@ -345,6 +351,15 @@ router.put("/rooms/:id", async (req, res) => {
         room.maxGuests = req.body?.maxGuests !== undefined
             ? Number(req.body.maxGuests)
             : room.maxGuests;
+        room.maxAdults = req.body?.maxAdults !== undefined
+            ? Number(req.body.maxAdults)
+            : room.maxAdults;
+        room.maxChildren = req.body?.maxChildren !== undefined
+            ? Number(req.body.maxChildren)
+            : room.maxChildren;
+        room.maxChildAge = req.body?.maxChildAge !== undefined
+            ? Number(req.body.maxChildAge)
+            : room.maxChildAge;
         room.size = req.body?.size ?? room.size;
         room.description = req.body?.description ?? room.description;
         room.shortDescription = req.body?.shortDescription ?? room.shortDescription;

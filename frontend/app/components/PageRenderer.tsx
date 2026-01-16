@@ -32,6 +32,8 @@ type Page = {
 
 const safeList = (value?: string) => (value ? String(value) : "");
 const resolveImage = (value?: string) => resolveUploadUrl(safeList(value));
+const isEmbeddableMapUrl = (value?: string) =>
+  Boolean(value && /google\.com\/maps\/embed\?/i.test(value));
 
 export default function PageRenderer({ page }: { page: Page }) {
   const background = page.theme?.background;
@@ -152,88 +154,119 @@ function BranchesDetail(props: Record<string, any>) {
     ? { backgroundColor: safeList(props.backgroundColor) }
     : undefined;
   const branches = (props.branches || []) as Array<Record<string, any>>;
+  const branch = branches[0];
   return (
     <section className="py-16" style={backgroundStyle}>
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6">
         <h2 className="text-center text-3xl font-semibold text-[var(--brand-navy)]">
           {safeList(props.heading)}
         </h2>
-        <div className="grid gap-6 md:grid-cols-2">
-          {branches.map((branch, index) => (
-            <div
-              key={branch.id || `${branch.name}-${index}`}
-              className="rounded-2xl bg-white p-5 shadow-lg shadow-blue-900/10"
-            >
-              <h3 className="text-base font-semibold text-[var(--brand-navy)]">
-                {safeList(branch.name)}
-              </h3>
-              <div className="mt-4 grid gap-3 text-xs text-slate-600">
-                <div className="flex items-start gap-2">
-                  <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                    📍
-                  </span>
-                  <div>
-                    <p className="font-semibold text-slate-700">ที่อยู่</p>
-                    <p className="whitespace-pre-line">
-                      {safeList(branch.address)}
-                    </p>
+        <div className="grid gap-6 md:grid-cols-[0.45fr_0.55fr]">
+          <div className="rounded-2xl bg-white p-5 shadow-lg shadow-blue-900/10">
+            {branch ? (
+              <>
+                <h3 className="text-base font-semibold text-[var(--brand-navy)]">
+                  {safeList(branch.name)}
+                </h3>
+                <div className="mt-4 grid gap-3 text-xs text-slate-600">
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                      📍
+                    </span>
+                    <div>
+                      <p className="font-semibold text-slate-700">ที่อยู่</p>
+                      <p className="whitespace-pre-line">
+                        {safeList(branch.address)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                      ☎️
+                    </span>
+                    <div>
+                      <p className="font-semibold text-slate-700">โทรศัพท์</p>
+                      <p>{safeList(branch.phone)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                      ✉️
+                    </span>
+                    <div>
+                      <p className="font-semibold text-slate-700">อีเมล</p>
+                      <p>{safeList(branch.email)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                      🕒
+                    </span>
+                    <div>
+                      <p className="font-semibold text-slate-700">เวลาทำการ</p>
+                      <p className="whitespace-pre-line">
+                        {safeList(branch.hours)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                    ☎️
-                  </span>
-                  <div>
-                    <p className="font-semibold text-slate-700">โทรศัพท์</p>
-                    <p>{safeList(branch.phone)}</p>
+                <div className="mt-4">
+                  <p className="text-xs font-semibold text-slate-700">
+                    บริการที่สาขานี้
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(branch.services || []).map(
+                      (service: string, serviceIndex: number) => (
+                        <span
+                          key={`${service}-${serviceIndex}`}
+                          className="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600"
+                        >
+                          {safeList(service)}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                    ✉️
-                  </span>
-                  <div>
-                    <p className="font-semibold text-slate-700">อีเมล</p>
-                    <p>{safeList(branch.email)}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                    🕒
-                  </span>
-                  <div>
-                    <p className="font-semibold text-slate-700">เวลาทำการ</p>
-                    <p className="whitespace-pre-line">
-                      {safeList(branch.hours)}
-                    </p>
-                  </div>
-                </div>
+                <a
+                  href={safeList(branch.mapHref) || "#"}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
+                >
+                  📍 {safeList(branch.mapLabel) || "นำทางไปสาขานี้"}
+                </a>
+              </>
+            ) : (
+              <div className="text-sm text-slate-500">
+                No branch data yet.
               </div>
-              <div className="mt-4">
-                <p className="text-xs font-semibold text-slate-700">
-                  บริการที่สาขานี้
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {(branch.services || []).map(
-                    (service: string, serviceIndex: number) => (
-                      <span
-                        key={`${service}-${serviceIndex}`}
-                        className="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600"
-                      >
-                        {safeList(service)}
-                      </span>
-                    )
-                  )}
-                </div>
+            )}
+          </div>
+          <div className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-900/10">
+            {branch?.mapHref && isEmbeddableMapUrl(branch.mapHref) ? (
+              <iframe
+                title="Branch map"
+                src={safeList(branch.mapHref)}
+                className="h-[420px] w-full"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            ) : (
+              <div className="flex h-[420px] flex-col items-center justify-center gap-3 text-center text-sm text-slate-400">
+                <span>Map URL must be a Google Maps embed link.</span>
+                {branch?.mapHref ? (
+                  <a
+                    href={safeList(branch.mapHref)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700"
+                  >
+                    Open in maps
+                  </a>
+                ) : (
+                  <span>Add mapHref to show the map.</span>
+                )}
               </div>
-              <a
-                href={safeList(branch.mapHref) || "#"}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--brand-yellow)] px-4 py-2 text-xs font-semibold text-[var(--brand-navy)]"
-              >
-                📍 {safeList(branch.mapLabel) || "นำทางไปสาขานี้"}
-              </a>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
       </div>
     </section>
@@ -606,22 +639,31 @@ function ContactChannels(props: Record<string, any>) {
 }
 
 function AboutUsText(props: Record<string, any>) {
-  const backgroundStyle = safeList(props.backgroundColor)
-    ? { backgroundColor: safeList(props.backgroundColor) }
-    : undefined;
+  const backgroundColor = safeList(props.backgroundColor);
+  const backgroundStyle = backgroundColor ? { backgroundColor } : undefined;
+  const bg = backgroundColor.toLowerCase();
+  const isLight =
+    !bg || bg === "#fff" || bg === "#ffffff" || bg === "white";
+  const headingClass = isLight ? "text-slate-900" : "text-white";
+  const subheadingClass = isLight ? "text-slate-600" : "text-slate-200";
+  const descriptionClass = isLight ? "text-slate-700" : "text-slate-100";
+  const taglineClass = isLight ? "text-slate-500" : "text-slate-200";
   return (
-    <section className="py-16 text-white" style={backgroundStyle}>
+    <section
+      className={`py-16 ${isLight ? "text-slate-900" : "text-white"}`}
+      style={backgroundStyle}
+    >
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-6 text-center">
-        <h2 className="text-4xl font-semibold tracking-wide text-white whitespace-pre-line">
+        <h2 className={`text-4xl font-semibold tracking-wide whitespace-pre-line ${headingClass}`}>
           {safeList(props.heading)}
         </h2>
-        <p className="text-base font-medium text-slate-200 whitespace-pre-line">
+        <p className={`text-base font-medium whitespace-pre-line ${subheadingClass}`}>
           {safeList(props.subheading)}
         </p>
-        <p className="text-sm text-slate-100 whitespace-pre-line">
+        <p className={`text-sm whitespace-pre-line ${descriptionClass}`}>
           {safeList(props.description)}
         </p>
-        <p className="text-sm font-semibold text-slate-200 whitespace-pre-line">
+        <p className={`text-sm font-semibold whitespace-pre-line ${taglineClass}`}>
           {safeList(props.tagline)}
         </p>
       </div>
@@ -630,33 +672,45 @@ function AboutUsText(props: Record<string, any>) {
 }
 
 function ContactAndServices(props: Record<string, any>) {
-  const backgroundStyle = safeList(props.backgroundColor)
-    ? { backgroundColor: safeList(props.backgroundColor) }
+  const backgroundColor = safeList(props.backgroundColor);
+  const backgroundStyle = backgroundColor
+    ? { backgroundColor }
     : undefined;
+  const bg = backgroundColor.toLowerCase();
+  const isLight =
+    !bg || bg === "#fff" || bg === "#ffffff" || bg === "white";
+  const headingClass = isLight ? "text-slate-900" : "text-white";
+  const bodyClass = isLight ? "text-slate-600" : "text-slate-200";
+  const secondaryCtaClass = isLight
+    ? "border-slate-300 text-slate-700"
+    : "border-white/40 text-white";
   return (
-    <section className="py-10 text-white" style={backgroundStyle}>
+    <section
+      className={`py-10 ${isLight ? "text-slate-900" : "text-white"}`}
+      style={backgroundStyle}
+    >
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6">
         <div className="text-center">
-          <h2 className="text-3xl font-semibold leading-tight">
+          <h2 className={`text-3xl font-semibold leading-tight ${headingClass}`}>
             {safeList(props.heading)}
           </h2>
-          <p className="mt-3 text-base text-slate-200">
+          <p className={`mt-3 text-base ${bodyClass}`}>
             {safeList(props.subheading)}
           </p>
-          <p className="mt-2 text-sm text-slate-200">
+          <p className={`mt-2 text-sm ${bodyClass}`}>
             {safeList(props.badges)}
           </p>
         </div>
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <a
             href={safeList(props.primaryCtaHref) || "#"}
-            className="rounded-full bg-[var(--brand-yellow)] px-6 py-3 text-sm font-semibold text-[var(--brand-navy)]"
+            className="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white"
           >
             {safeList(props.primaryCtaText)}
           </a>
           <a
             href={safeList(props.secondaryCtaHref) || "#"}
-            className="rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white"
+            className={`rounded-full border px-6 py-3 text-sm font-semibold ${secondaryCtaClass}`}
           >
             {safeList(props.secondaryCtaText)}
           </a>
@@ -667,21 +721,26 @@ function ContactAndServices(props: Record<string, any>) {
 }
 
 function OurWork(props: Record<string, any>) {
-  const backgroundStyle = safeList(props.backgroundColor)
-    ? { backgroundColor: safeList(props.backgroundColor) }
-    : undefined;
+  const backgroundColor = safeList(props.backgroundColor);
+  const backgroundStyle = backgroundColor ? { backgroundColor } : undefined;
+  const bg = backgroundColor.toLowerCase();
+  const isLight =
+    !bg || bg === "#fff" || bg === "#ffffff" || bg === "white";
+  const headingClass = isLight ? "text-slate-900" : "text-white";
+  const subheadingClass = isLight ? "text-slate-500" : "text-white/70";
+  const descriptionClass = isLight ? "text-slate-600" : "text-white/80";
   const items = (props.items || []) as Array<Record<string, any>>;
   return (
     <section className="py-16" style={backgroundStyle}>
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--brand-orange)]">
+          <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${subheadingClass}`}>
             {safeList(props.subheading)}
           </p>
-          <h2 className="mt-3 text-3xl font-semibold text-[var(--brand-navy)]">
+          <h2 className={`mt-3 text-3xl font-semibold ${headingClass}`}>
             {safeList(props.heading)}
           </h2>
-          <p className="mt-3 text-sm text-slate-600 whitespace-pre-line">
+          <p className={`mt-3 text-sm whitespace-pre-line ${descriptionClass}`}>
             {safeList(props.description)}
           </p>
         </div>
@@ -929,17 +988,12 @@ function ImagesSlider(props: Record<string, any>) {
 function Hero(props: Record<string, any>) {
   const backgroundImage = props.backgroundImage as string | undefined;
   const slides = (props.slides || []) as Array<Record<string, string>>;
+  const heroImage = resolveImage(backgroundImage);
   const backgroundStyle = safeList(props.backgroundColor)
     ? { backgroundColor: safeList(props.backgroundColor) }
     : undefined;
   return (
     <header className="relative overflow-hidden" style={backgroundStyle}>
-      {backgroundImage && (
-        <div
-          className="absolute inset-0 -z-10 bg-cover bg-center opacity-20"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
-        />
-      )}
       <div />
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 pb-16 pt-10 lg:flex-row lg:items-center">
         <div className="max-w-xl space-y-6">
@@ -968,9 +1022,15 @@ function Hero(props: Record<string, any>) {
         </div>
         <div className="relative flex-1">
           <div className="absolute -right-8 -top-6 h-32 w-32 rounded-full bg-white/70 blur-xl" />
-          <div className="rounded-3xl bg-white/90 p-4 shadow-2xl shadow-blue-900/15 backdrop-blur">
-            {slides.length > 0 ? (
-              <div className="h-72">
+          <div className="overflow-hidden rounded-3xl bg-white/90 shadow-2xl shadow-blue-900/15 backdrop-blur">
+            {heroImage ? (
+              <img
+                src={heroImage}
+                alt={safeList(props.title) || "Hero image"}
+                className="h-80 w-full object-cover"
+              />
+            ) : slides.length > 0 ? (
+              <div className="h-80">
                 <HeroSlider
                   slides={slides.map((slide) => ({
                     image: resolveImage(slide.image || slide.url),
@@ -980,38 +1040,8 @@ function Hero(props: Record<string, any>) {
                 />
               </div>
             ) : (
-              <div className="rounded-3xl bg-white/90 p-6 shadow-2xl shadow-blue-900/15 backdrop-blur">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                      Trusted Score
-                    </p>
-                    <p className="text-3xl font-semibold text-[var(--brand-navy)]">
-                      4.9/5
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-[var(--brand-yellow)] px-4 py-2 text-xs font-semibold text-[var(--brand-navy)]">
-                    1,200+ รีวิวจริง
-                  </div>
-                </div>
-                <div className="mt-6 grid gap-4">
-                  {[
-                    "ทีมช่างมืออาชีพ",
-                    "คิวงานไว",
-                    "การันตีผลงาน",
-                    "ติดตามหลังบริการ",
-                  ].map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"
-                    >
-                      <span className="text-sm text-slate-600">{item}</span>
-                      <span className="text-lg font-semibold text-[var(--brand-navy)]">
-                        ✓
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              <div className="flex h-80 items-center justify-center text-sm text-slate-400">
+                No hero image
               </div>
             )}
           </div>
@@ -1187,18 +1217,18 @@ function Contact(props: Record<string, any>) {
   return (
     <section
       id="booking"
-      className="mx-auto max-w-6xl px-0 py-0"
+      className="mx-auto max-w-6xl px-6 py-16"
       style={backgroundStyle}
     >
-      <div className="grid gap-0 lg:grid-cols-[1.1fr_1fr]">
-        <div className="rounded-none bg-white/90 p-0 shadow-none">
-          <h3 className="text-2xl font-semibold text-[var(--brand-navy)]">
+      <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-900/10">
+          <h3 className="text-2xl font-semibold text-slate-900">
             {safeList(props.title) || "จองคิวบริการ"}
           </h3>
-          <p className="mt-0 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-slate-600">
             กรอกข้อมูลแล้วทีมงานจะโทรกลับภายใน 15 นาทีในเวลาทำการ
           </p>
-          <form className="mt-0 grid gap-0">
+          <form className="mt-6 grid gap-4">
             <input
               className="rounded-2xl border border-slate-200 px-4 py-3 text-sm"
               placeholder="ชื่อ-นามสกุล"
@@ -1217,19 +1247,22 @@ function Contact(props: Record<string, any>) {
             />
             <a
               href={safeList(props.ctaHref) || "#"}
-              className="rounded-full bg-[var(--brand-orange)] px-6 py-3 text-center text-sm font-semibold text-white"
+              className="rounded-full bg-black px-6 py-3 text-center text-sm font-semibold text-white"
             >
               {safeList(props.ctaText) || "ส่งข้อมูลให้ทีมงานติดต่อกลับ"}
             </a>
           </form>
         </div>
-        <div className="rounded-none bg-[var(--brand-yellow)]/90 p-0 text-[var(--brand-navy)] shadow-none">
-          <h3 className="text-2xl font-semibold">ติดต่อเรา</h3>
-          <div className="mt-0 grid gap-0 text-sm">
-            <div className="rounded-none bg-white/70 px-0 py-0">
-              โทร: <strong>{safeList(props.phone)}</strong>
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-900/10">
+          <h3 className="text-xl font-semibold text-slate-900">ติดต่อเรา</h3>
+          <div className="mt-4 grid gap-3 text-sm text-slate-600">
+            <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+              <span>โทร</span>
+              <strong className="text-slate-900">
+                {safeList(props.phone)}
+              </strong>
             </div>
-            <div className="rounded-none bg-white/70 px-0 py-0">
+            <div className="rounded-2xl bg-slate-50 px-4 py-3">
               {safeList(props.note)}
             </div>
           </div>

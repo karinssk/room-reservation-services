@@ -18,6 +18,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useRef, useState } from "react";
 import type { Block } from "./types";
 import { safeText } from "./utils";
+import { resolveUploadUrl } from "@/lib/urls";
 
 type LivePreviewProps = {
   blocks: Block[];
@@ -31,6 +32,26 @@ type LivePreviewProps = {
   dropTarget: { index: number; position: "before" | "after" } | null;
   onDropHover: (index: number, position: "before" | "after") => void;
 };
+
+const pickReadableTextColor = (value: string, fallback: string) => {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!match) return fallback;
+  const hex = match[1].length === 3
+    ? match[1]
+        .split("")
+        .map((char) => char + char)
+        .join("")
+    : match[1];
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance >= 0.6 ? trimmed : fallback;
+};
+
+const isEmbeddableMapUrl = (value: string) =>
+  /google\.com\/maps\/embed\?/i.test(value);
 
 function ImageSliderPreview({
   images,
@@ -172,7 +193,8 @@ export function LivePreview({
     onReorder(oldIndex, newIndex);
   };
 
-  const renderBlock = (block: Block, index: number) => {
+  const renderBlock = (block: Block | undefined, index: number) => {
+    if (!block || !block.props) return null;
     const props = block.props as Record<string, any>;
     const updateItem = (
       key: string,
@@ -202,6 +224,7 @@ export function LivePreview({
 
     if (block.type === "hero") {
       const backgroundColor = safeText(props.backgroundColor);
+      const heroImage = resolveUploadUrl(safeText(props.backgroundImage));
       return wrap(
         <header
           className="relative overflow-hidden"
@@ -256,20 +279,18 @@ export function LivePreview({
             </div>
             <div className="relative flex-1">
               <div className="absolute -right-8 -top-6 h-32 w-32 rounded-full bg-white/70 blur-xl" />
-              <div className="rounded-3xl bg-white/90 p-6 shadow-2xl shadow-blue-900/15 backdrop-blur">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                      Trusted Score
-                    </p>
-                    <p className="text-3xl font-semibold text-[var(--brand-navy)]">
-                      4.9/5
-                    </p>
+              <div className="overflow-hidden rounded-3xl bg-white/90 shadow-2xl shadow-blue-900/15 backdrop-blur">
+                {heroImage ? (
+                  <img
+                    src={heroImage}
+                    alt={safeText(props.title) || "Hero image"}
+                    className="h-80 w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-80 items-center justify-center text-sm text-slate-400">
+                    No hero image
                   </div>
-                  <div className="rounded-2xl bg-[var(--brand-yellow)] px-4 py-2 text-xs font-semibold text-[var(--brand-navy)]">
-                    1,200+ รีวิวจริง
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -303,30 +324,21 @@ export function LivePreview({
           <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-slate-900/80" />
           <div className="mx-auto grid max-w-6xl gap-6 px-6 py-10 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-4">
-              <p
-                className="text-xs font-semibold uppercase tracking-[0.3em]"
-                style={{ color: safeText(props.subtitleColor) || "#cbd5f5" }}
-              >
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/90">
                 <EditableText
                   value={safeText(props.subtitle)}
                   onCommit={(value) => onUpdateBlock(index, { subtitle: value })}
-                  className="text-white/80"
+                  className="text-white/90"
                 />
               </p>
-              <h2
-                className="text-3xl font-semibold"
-                style={{ color: safeText(props.titleColor) || "#ffffff" }}
-              >
+              <h2 className="text-3xl font-semibold text-white">
                 <EditableText
                   value={safeText(props.title)}
                   onCommit={(value) => onUpdateBlock(index, { title: value })}
                   className="text-white"
                 />
               </h2>
-              <p
-                className="text-sm"
-                style={{ color: safeText(props.descriptionColor) || "#e2e8f0" }}
-              >
+              <p className="text-sm text-white/80">
                 <EditableText
                   value={safeText(props.description)}
                   onCommit={(value) =>
@@ -378,56 +390,64 @@ export function LivePreview({
 
     if (block.type === "contact-and-services") {
       const backgroundColor = safeText(props.backgroundColor);
+      const bg = backgroundColor.toLowerCase();
+      const isLight =
+        !bg || bg === "#fff" || bg === "#ffffff" || bg === "white";
+      const headingClass = isLight ? "text-slate-900" : "text-white";
+      const bodyClass = isLight ? "text-slate-600" : "text-slate-200";
+      const secondaryCtaClass = isLight
+        ? "border-slate-300 text-slate-700"
+        : "border-white/40 text-white";
       return wrap(
         <section
-          className="py-10 text-white"
+          className={`py-10 ${isLight ? "text-slate-900" : "text-white"}`}
           style={backgroundColor ? { backgroundColor } : undefined}
         >
           <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6">
             <div className="text-center">
-              <h2 className="text-3xl font-semibold leading-tight">
+              <h2 className={`text-3xl font-semibold leading-tight ${headingClass}`}>
                 <EditableText
                   value={safeText(props.heading)}
                   onCommit={(value) => onUpdateBlock(index, { heading: value })}
-                  className="text-white"
+                  className={headingClass}
                   multiline
                 />
               </h2>
-              <p className="mt-3 text-base text-slate-200">
+              <p className={`mt-3 text-base ${bodyClass}`}>
                 <EditableText
                   value={safeText(props.subheading)}
                   onCommit={(value) =>
                     onUpdateBlock(index, { subheading: value })
                   }
-                  className="text-slate-200"
+                  className={bodyClass}
                 />
               </p>
-              <p className="mt-2 text-sm text-slate-200">
+              <p className={`mt-2 text-sm ${bodyClass}`}>
                 <EditableText
                   value={safeText(props.badges)}
                   onCommit={(value) => onUpdateBlock(index, { badges: value })}
-                  className="text-slate-200"
+                  className={bodyClass}
                   multiline
                 />
               </p>
             </div>
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <span className="rounded-full bg-[var(--brand-yellow)] px-6 py-3 text-sm font-semibold text-[var(--brand-navy)]">
+              <span className="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white">
                 <EditableText
                   value={safeText(props.primaryCtaText)}
                   onCommit={(value) =>
                     onUpdateBlock(index, { primaryCtaText: value })
                   }
-                  className="text-[var(--brand-navy)]"
+                  className="text-white"
                 />
               </span>
-              <span className="rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white">
+              <span className={`rounded-full border px-6 py-3 text-sm font-semibold ${secondaryCtaClass}`}>
                 <EditableText
                   value={safeText(props.secondaryCtaText)}
                   onCommit={(value) =>
                     onUpdateBlock(index, { secondaryCtaText: value })
                   }
-                  className="text-white"
+                  className={isLight ? "text-slate-700" : "text-white"}
                 />
               </span>
             </div>
@@ -438,40 +458,50 @@ export function LivePreview({
 
     if (block.type === "about-us-text") {
       const backgroundColor = safeText(props.backgroundColor) || "#0b3c86";
+      const bg = backgroundColor.toLowerCase();
+      const isLight =
+        !bg || bg === "#fff" || bg === "#ffffff" || bg === "white";
+      const headingClass = isLight ? "text-slate-900" : "text-white";
+      const subheadingClass = isLight ? "text-slate-600" : "text-slate-200";
+      const descriptionClass = isLight ? "text-slate-700" : "text-slate-100";
+      const taglineClass = isLight ? "text-slate-500" : "text-slate-200";
       return wrap(
-        <section className="py-16 text-white" style={{ backgroundColor }}>
+        <section
+          className={`py-16 ${isLight ? "text-slate-900" : "text-white"}`}
+          style={{ backgroundColor }}
+        >
           <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-6 text-center">
-            <h2 className="text-4xl font-semibold tracking-wide text-white whitespace-pre-line">
+            <h2 className={`text-4xl font-semibold tracking-wide whitespace-pre-line ${headingClass}`}>
               <EditableText
                 value={safeText(props.heading)}
                 onCommit={(value) => onUpdateBlock(index, { heading: value })}
-                className="text-white"
+                className={headingClass}
               />
             </h2>
-            <p className="text-base font-medium text-slate-200 whitespace-pre-line">
+            <p className={`text-base font-medium whitespace-pre-line ${subheadingClass}`}>
               <EditableText
                 value={safeText(props.subheading)}
                 onCommit={(value) =>
                   onUpdateBlock(index, { subheading: value })
                 }
-                className="text-slate-200"
+                className={subheadingClass}
               />
             </p>
-            <p className="text-sm text-slate-100 whitespace-pre-line">
+            <p className={`text-sm whitespace-pre-line ${descriptionClass}`}>
               <EditableText
                 value={safeText(props.description)}
                 onCommit={(value) =>
                   onUpdateBlock(index, { description: value })
                 }
-                className="text-slate-100"
+                className={descriptionClass}
                 multiline
               />
             </p>
-            <p className="text-sm font-semibold text-slate-200 whitespace-pre-line">
+            <p className={`text-sm font-semibold whitespace-pre-line ${taglineClass}`}>
               <EditableText
                 value={safeText(props.tagline)}
                 onCommit={(value) => onUpdateBlock(index, { tagline: value })}
-                className="text-slate-200"
+                className={taglineClass}
               />
             </p>
           </div>
@@ -527,6 +557,7 @@ export function LivePreview({
       const branches = (props.branches || []) as Array<Record<string, any>>;
       const updateBranch = (itemIndex: number, patch: Record<string, unknown>) =>
         updateItem("branches", itemIndex, patch);
+      const branch = branches[0];
       return wrap(
         <section className="py-16" style={{ backgroundColor }}>
           <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6">
@@ -537,130 +568,158 @@ export function LivePreview({
                 className="text-[var(--brand-navy)]"
               />
             </h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              {branches.map((branch, branchIndex) => (
-                <div
-                  key={branch.id || `${branch.name}-${branchIndex}`}
-                  className="rounded-2xl bg-white p-5 shadow-lg shadow-blue-900/10"
-                >
-                  <h3 className="text-base font-semibold text-[var(--brand-navy)]">
-                    <EditableText
-                      value={safeText(branch.name)}
-                      onCommit={(value) =>
-                        updateBranch(branchIndex, { name: value })
-                      }
-                      className="text-[var(--brand-navy)]"
-                    />
-                  </h3>
-                  <div className="mt-4 grid gap-3 text-xs text-slate-600">
-                    <div className="flex items-start gap-2">
-                      <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                        📍
-                      </span>
-                      <div>
-                        <p className="font-semibold text-slate-700">ที่อยู่</p>
-                        <p className="whitespace-pre-line">
-                          <EditableText
-                            value={safeText(branch.address)}
-                            onCommit={(value) =>
-                              updateBranch(branchIndex, { address: value })
-                            }
-                            className="text-slate-600"
-                            multiline
-                          />
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                        ☎️
-                      </span>
-                      <div>
-                        <p className="font-semibold text-slate-700">โทรศัพท์</p>
-                        <p>
-                          <EditableText
-                            value={safeText(branch.phone)}
-                            onCommit={(value) =>
-                              updateBranch(branchIndex, { phone: value })
-                            }
-                            className="text-slate-600"
-                          />
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                        ✉️
-                      </span>
-                      <div>
-                        <p className="font-semibold text-slate-700">อีเมล</p>
-                        <p>
-                          <EditableText
-                            value={safeText(branch.email)}
-                            onCommit={(value) =>
-                              updateBranch(branchIndex, { email: value })
-                            }
-                            className="text-slate-600"
-                          />
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                        🕒
-                      </span>
-                      <div>
-                        <p className="font-semibold text-slate-700">เวลาทำการ</p>
-                        <p className="whitespace-pre-line">
-                          <EditableText
-                            value={safeText(branch.hours)}
-                            onCommit={(value) =>
-                              updateBranch(branchIndex, { hours: value })
-                            }
-                            className="text-slate-600"
-                            multiline
-                          />
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-xs font-semibold text-slate-700">
-                      บริการที่สาขานี้
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(branch.services || []).map(
-                        (service: string, serviceIndex: number) => (
-                          <span
-                            key={`${service}-${serviceIndex}`}
-                            className="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600"
-                          >
+            <div className="grid gap-6 md:grid-cols-[0.45fr_0.55fr]">
+              <div className="rounded-2xl bg-white p-5 shadow-lg shadow-blue-900/10">
+                {branch ? (
+                  <>
+                    <h3 className="text-base font-semibold text-[var(--brand-navy)]">
+                      <EditableText
+                        value={safeText(branch.name)}
+                        onCommit={(value) => updateBranch(0, { name: value })}
+                        className="text-[var(--brand-navy)]"
+                      />
+                    </h3>
+                    <div className="mt-4 grid gap-3 text-xs text-slate-600">
+                      <div className="flex items-start gap-2">
+                        <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                          📍
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-700">ที่อยู่</p>
+                          <p className="whitespace-pre-line">
                             <EditableText
-                              value={safeText(service)}
-                              onCommit={(value) => {
-                                const next = [...(branch.services || [])];
-                                next[serviceIndex] = value;
-                                updateBranch(branchIndex, { services: next });
-                              }}
+                              value={safeText(branch.address)}
+                              onCommit={(value) =>
+                                updateBranch(0, { address: value })
+                              }
+                              className="text-slate-600"
+                              multiline
+                            />
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                          ☎️
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-700">โทรศัพท์</p>
+                          <p>
+                            <EditableText
+                              value={safeText(branch.phone)}
+                              onCommit={(value) =>
+                                updateBranch(0, { phone: value })
+                              }
                               className="text-slate-600"
                             />
-                          </span>
-                        )
-                      )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                          ✉️
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-700">อีเมล</p>
+                          <p>
+                            <EditableText
+                              value={safeText(branch.email)}
+                              onCommit={(value) =>
+                                updateBranch(0, { email: value })
+                              }
+                              className="text-slate-600"
+                            />
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                          🕒
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-700">เวลาทำการ</p>
+                          <p className="whitespace-pre-line">
+                            <EditableText
+                              value={safeText(branch.hours)}
+                              onCommit={(value) =>
+                                updateBranch(0, { hours: value })
+                              }
+                              className="text-slate-600"
+                              multiline
+                            />
+                          </p>
+                        </div>
+                      </div>
                     </div>
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold text-slate-700">
+                        บริการที่สาขานี้
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(branch.services || []).map(
+                          (service: string, serviceIndex: number) => (
+                            <span
+                              key={`${service}-${serviceIndex}`}
+                              className="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600"
+                            >
+                              <EditableText
+                                value={safeText(service)}
+                                onCommit={(value) => {
+                                  const next = [...(branch.services || [])];
+                                  next[serviceIndex] = value;
+                                  updateBranch(0, { services: next });
+                                }}
+                                className="text-slate-600"
+                              />
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </div>
+                    <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-semibold text-white">
+                      📍
+                      <EditableText
+                        value={safeText(branch.mapLabel) || "นำทางไปสาขานี้"}
+                        onCommit={(value) =>
+                          updateBranch(0, { mapLabel: value })
+                        }
+                        className="text-white"
+                      />
+                    </button>
+                  </>
+                ) : (
+                  <div className="text-sm text-slate-500">
+                    Add at least one branch to show details.
                   </div>
-                  <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--brand-yellow)] px-4 py-2 text-xs font-semibold text-[var(--brand-navy)]">
-                    📍
-                    <EditableText
-                      value={safeText(branch.mapLabel) || "นำทางไปสาขานี้"}
-                      onCommit={(value) =>
-                        updateBranch(branchIndex, { mapLabel: value })
-                      }
-                      className="text-[var(--brand-navy)]"
-                    />
-                  </button>
-                </div>
-              ))}
+                )}
+              </div>
+              <div className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-900/10">
+                {branch?.mapHref && isEmbeddableMapUrl(branch.mapHref) ? (
+                  <iframe
+                    title="Branch map"
+                    src={safeText(branch.mapHref)}
+                    className="h-[420px] w-full"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                ) : (
+                  <div className="flex h-[420px] flex-col items-center justify-center gap-3 text-center text-sm text-slate-400">
+                    <span>Map URL must be a Google Maps embed link.</span>
+                    {branch?.mapHref ? (
+                      <a
+                        href={safeText(branch.mapHref)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700"
+                      >
+                        Open in maps
+                      </a>
+                    ) : (
+                      <span>Add mapHref to show the map.</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -1698,48 +1757,68 @@ export function LivePreview({
 
     if (block.type === "ready-for-service") {
       const backgroundColor = safeText(props.backgroundColor);
+      const bg = backgroundColor.toLowerCase();
+      const isLight =
+        !bg || bg === "#fff" || bg === "#ffffff" || bg === "white";
+      const normalizeColor = (value: string) => value.trim().toLowerCase();
       const primaryCtaBackground = safeText(props.primaryCtaBackground);
       const primaryCtaTextColor = safeText(props.primaryCtaTextColor);
+      let primaryBg =
+        primaryCtaBackground || (isLight ? "#000000" : "var(--brand-yellow)");
+      let primaryText =
+        primaryCtaTextColor || (isLight ? "#ffffff" : "var(--brand-navy)");
+      if (normalizeColor(primaryBg) === normalizeColor(primaryText)) {
+        primaryText = "#ffffff";
+      }
       const secondaryCtaBackground = safeText(props.secondaryCtaBackground);
       const secondaryCtaTextColor = safeText(props.secondaryCtaTextColor);
-      const iconColor = safeText(props.iconColor) || "currentColor";
+      const secondaryBg =
+        secondaryCtaBackground || (isLight ? "#ffffff" : "transparent");
+      const secondaryText =
+        secondaryCtaTextColor || (isLight ? "#334155" : "#ffffff");
+      const iconColor =
+        safeText(props.iconColor) || (isLight ? "#0f172a" : "currentColor");
+      const headingClass = isLight ? "text-slate-900" : "text-white";
+      const descriptionClass = isLight ? "text-slate-600" : "text-white/80";
+      const secondaryBorderClass = isLight ? "border-slate-300" : "border-white/30";
+      const iconBgClass = isLight ? "bg-slate-100" : "bg-white/20";
       const primaryIcon = safeText(props.primaryIcon);
       const secondaryIcon = safeText(props.secondaryIcon);
 
       return wrap(
         <section
-          className="py-12 text-white"
+          className={`py-12 ${isLight ? "text-slate-900" : "text-white"}`}
           style={backgroundColor ? { backgroundColor } : undefined}
         >
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 px-6 text-center">
-            <h2 className="text-3xl font-semibold">
+            <h2 className={`text-3xl font-semibold ${headingClass}`}>
               <EditableText
                 value={safeText(props.heading)}
                 onCommit={(value) => onUpdateBlock(index, { heading: value })}
-                className="text-white"
+                className={headingClass}
               />
             </h2>
-            <p className="text-sm text-white/80">
+            <p className={`text-sm ${descriptionClass}`}>
               <EditableText
                 value={safeText(props.description)}
                 onCommit={(value) =>
                   onUpdateBlock(index, { description: value })
                 }
-                className="text-white/80"
+                className={descriptionClass}
                 multiline
               />
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a
-                href={safeText(props.primaryCtaHref) || "#"}
+              <button
+                type="button"
                 className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold shadow-lg"
                 style={{
-                  backgroundColor: primaryCtaBackground || "var(--brand-yellow)",
-                  color: primaryCtaTextColor || "var(--brand-navy)",
+                  backgroundColor: primaryBg,
+                  color: primaryText,
                 }}
               >
                 <span
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20"
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${iconBgClass}`}
                   style={{ color: iconColor }}
                 >
                   {primaryIcon ? (
@@ -1757,19 +1836,19 @@ export function LivePreview({
                   onCommit={(value) =>
                     onUpdateBlock(index, { primaryCtaText: value })
                   }
-                  className="text-[var(--brand-navy)]"
+                  className="text-inherit"
                 />
-              </a>
-              <a
-                href={safeText(props.secondaryCtaHref) || "#"}
-                className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3 text-sm font-semibold"
+              </button>
+              <button
+                type="button"
+                className={`inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold ${secondaryBorderClass}`}
                 style={{
-                  backgroundColor: secondaryCtaBackground || "transparent",
-                  color: secondaryCtaTextColor || "#ffffff",
+                  backgroundColor: secondaryBg,
+                  color: secondaryText,
                 }}
               >
                 <span
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15"
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${iconBgClass}`}
                   style={{ color: iconColor }}
                 >
                   {secondaryIcon ? (
@@ -1787,9 +1866,9 @@ export function LivePreview({
                   onCommit={(value) =>
                     onUpdateBlock(index, { secondaryCtaText: value })
                   }
-                  className="text-white"
+                  className="text-inherit"
                 />
-              </a>
+              </button>
             </div>
           </div>
         </section>
@@ -1883,6 +1962,12 @@ export function LivePreview({
     if (block.type === "our-work") {
       const items = (props.items || []) as Array<Record<string, string>>;
       const backgroundColor = safeText(props.backgroundColor);
+      const bg = backgroundColor.toLowerCase();
+      const isLight =
+        !bg || bg === "#fff" || bg === "#ffffff" || bg === "white";
+      const headingClass = isLight ? "text-slate-900" : "text-white";
+      const subheadingClass = isLight ? "text-slate-500" : "text-white/70";
+      const descriptionClass = isLight ? "text-slate-600" : "text-white/80";
       return wrap(
         <section
           className="py-16"
@@ -1890,29 +1975,29 @@ export function LivePreview({
         >
           <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6">
             <div className="text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--brand-orange)]">
+              <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${subheadingClass}`}>
                 <EditableText
                   value={safeText(props.subheading)}
                   onCommit={(value) =>
                     onUpdateBlock(index, { subheading: value })
                   }
-                  className="text-[var(--brand-orange)]"
+                  className={subheadingClass}
                 />
               </p>
-              <h2 className="mt-3 text-3xl font-semibold text-[var(--brand-navy)]">
+              <h2 className={`mt-3 text-3xl font-semibold ${headingClass}`}>
                 <EditableText
                   value={safeText(props.heading)}
                   onCommit={(value) => onUpdateBlock(index, { heading: value })}
-                  className="text-[var(--brand-navy)]"
+                  className={headingClass}
                 />
               </h2>
-              <p className="mt-3 text-sm text-slate-600">
+              <p className={`mt-3 text-sm ${descriptionClass}`}>
                 <EditableText
                   value={safeText(props.description)}
                   onCommit={(value) =>
                     onUpdateBlock(index, { description: value })
                   }
-                  className="text-slate-600"
+                  className={descriptionClass}
                   multiline
                 />
               </p>
@@ -2606,18 +2691,58 @@ export function LivePreview({
           className="mx-auto max-w-6xl px-6 py-16"
           style={backgroundColor ? { backgroundColor } : undefined}
         >
-          <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr]">
-            <div className="rounded-3xl bg-white/90 p-8 shadow-xl shadow-blue-900/15">
-              <h3 className="text-2xl font-semibold text-[var(--brand-navy)]">
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-900/10">
+              <h3 className="text-2xl font-semibold text-slate-900">
                 <EditableText
                   value={safeText(props.title) || "จองคิวบริการ"}
                   onCommit={(value) => onUpdateBlock(index, { title: value })}
-                  className="text-[var(--brand-navy)]"
+                  className="text-slate-900"
                 />
               </h3>
               <p className="mt-2 text-sm text-slate-600">
                 กรอกข้อมูลแล้วทีมงานจะโทรกลับภายใน 15 นาทีในเวลาทำการ
               </p>
+              <div className="mt-6 grid gap-4">
+                <div className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-500">
+                  ชื่อ-นามสกุล
+                </div>
+                <div className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-500">
+                  เบอร์โทรศัพท์
+                </div>
+                <div className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-500">
+                  รายละเอียดบริการที่ต้องการ
+                </div>
+                <div className="rounded-full bg-black px-6 py-3 text-center text-sm font-semibold text-white">
+                  <EditableText
+                    value={safeText(props.ctaText) || "ส่งข้อมูลให้ทีมงานติดต่อกลับ"}
+                    onCommit={(value) => onUpdateBlock(index, { ctaText: value })}
+                    className="text-white"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-900/10">
+              <h3 className="text-xl font-semibold text-slate-900">ติดต่อเรา</h3>
+              <div className="mt-4 grid gap-3 text-sm text-slate-600">
+                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                  <span>โทร</span>
+                  <strong className="text-slate-900">
+                    <EditableText
+                      value={safeText(props.phone)}
+                      onCommit={(value) => onUpdateBlock(index, { phone: value })}
+                      className="text-slate-900"
+                    />
+                  </strong>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <EditableText
+                    value={safeText(props.note)}
+                    onCommit={(value) => onUpdateBlock(index, { note: value })}
+                    className="text-slate-600"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>

@@ -254,14 +254,7 @@ export const defaultProps: Record<string, Record<string, unknown>> = {
     secondaryCtaHref: "#rooms",
     backgroundImage: "",
     backgroundColor: "",
-    slides: [
-      {
-        image:
-          "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80",
-        title: "Daily & monthly stays",
-        subtitle: "Find the right room at the right price",
-      },
-    ],
+    slides: [],
   },
   "hero-images": {
     backgroundColor: "",

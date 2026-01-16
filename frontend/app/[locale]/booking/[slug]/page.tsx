@@ -18,6 +18,9 @@ type Room = {
   pricePerNight: number;
   pricePerMonth: number;
   maxGuests: number;
+  maxAdults?: number; // Optional as older rooms might not have it
+  maxChildren?: number;
+  maxChildAge?: number;
   size?: string;
   beddingOptions?: Array<{ type: string; description: string }>;
   facilities?: {
@@ -58,7 +61,9 @@ export default function BookingPage() {
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
-  const [numberOfGuests, setNumberOfGuests] = useState(1);
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [numberOfGuests, setNumberOfGuests] = useState(1); // Keep for compatibility/total
   const [specialRequests, setSpecialRequests] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoValid, setPromoValid] = useState(false);
@@ -165,9 +170,9 @@ export default function BookingPage() {
           guestName,
           guestEmail,
           guestPhone,
-          numberOfGuests,
+          numberOfGuests: adults + children,
           promoCode: promoValid ? promoCode : "",
-          specialRequests,
+          specialRequests: `Adults: ${adults}, Children: ${children}. ${specialRequests}`,
         }),
       });
 
@@ -221,7 +226,7 @@ export default function BookingPage() {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => router.push(`/${locale}/booking/${slug}?checkIn=${checkIn}&checkOut=${checkOut}`)}
+            onClick={() => router.push(`/${locale}/rooms/${slug}?checkIn=${checkIn}&checkOut=${checkOut}`)}
             className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -305,20 +310,66 @@ export default function BookingPage() {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Number of Guests *
+                    Guests *
                   </label>
-                  <select
-                    value={numberOfGuests}
-                    onChange={(e) => setNumberOfGuests(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    required
-                  >
-                    {Array.from({ length: room.maxGuests }, (_, i) => i + 1).map((n) => (
-                      <option key={n} value={n}>
-                        {n} {n === 1 ? "guest" : "guests"}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="rounded-lg border border-slate-300 p-4">
+                    {/* Adults */}
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <span className="block font-medium text-slate-900">Adults</span>
+                        <span className="text-xs text-slate-500">Max {room.maxAdults || room.maxGuests}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setAdults(Math.max(1, adults - 1))}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                          disabled={adults <= 1}
+                        >
+                          -
+                        </button>
+                        <span className="w-4 text-center font-medium">{adults}</span>
+                        <button
+                          type="button"
+                          onClick={() => setAdults(Math.min(room.maxAdults || room.maxGuests, adults + 1))}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                          disabled={adults >= (room.maxAdults || room.maxGuests)}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Children */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="block font-medium text-slate-900">Children</span>
+                        <span className="text-xs text-slate-500">Max {room.maxChildren || 0}</span>
+                        {room.maxChildAge && (
+                          <span className="block text-xs text-slate-400">Up to {room.maxChildAge} years</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setChildren(Math.max(0, children - 1))}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                          disabled={children <= 0}
+                        >
+                          -
+                        </button>
+                        <span className="w-4 text-center font-medium">{children}</span>
+                        <button
+                          type="button"
+                          onClick={() => setChildren(Math.min(room.maxChildren || 0, children + 1))}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                          disabled={children >= (room.maxChildren || 0)}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div>

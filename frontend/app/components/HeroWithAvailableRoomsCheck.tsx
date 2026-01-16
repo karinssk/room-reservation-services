@@ -64,22 +64,13 @@ export default function HeroWithAvailablebookingCheck({
 
       <div className="relative mx-auto grid max-w-6xl gap-10 px-6 pb-16 pt-14 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
         <div className="space-y-6">
-          <p
-            className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em]"
-            style={{ color: subtitleColor || undefined }}
-          >
+          <p className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-white/90">
             {subtitle || "Availability"}
           </p>
-          <h1
-            className="text-4xl font-semibold leading-tight md:text-5xl"
-            style={{ color: titleColor || undefined }}
-          >
+          <h1 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
             {title || "Find your next stay"}
           </h1>
-          <p
-            className="max-w-xl text-base md:text-lg"
-            style={{ color: descriptionColor || undefined }}
-          >
+          <p className="max-w-xl text-base text-white/80 md:text-lg">
             {description ||
               "Search daily or monthly booking and get real-time availability."}
           </p>

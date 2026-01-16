@@ -18,6 +18,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Block } from "./types";
 import { formatItems, parseItems, toLine } from "./utils";
+import { resolveUploadUrl } from "@/lib/urls";
 
 type GalleryItem = {
   id: string;
@@ -2203,7 +2204,6 @@ export function BlockEditor({
           ["primaryCtaHref", "Primary CTA Link"],
           ["secondaryCtaText", "Secondary CTA Text"],
           ["secondaryCtaHref", "Secondary CTA Link"],
-          ["backgroundImage", "Background Image URL"],
         ].map(([key, label]) => (
           <label key={key} className="grid gap-1">
             {label}
@@ -2228,35 +2228,7 @@ export function BlockEditor({
           />
         </label>
         <label className="grid gap-1">
-          Slides (one per line)
-          <textarea
-            key={`${block.uid}-slides`}
-            className="min-h-[120px] rounded-xl border border-slate-200 px-3 py-2"
-            defaultValue={(props.slides as Array<Record<string, string>>)
-              ?.map((slide) =>
-                [slide.image, slide.title, slide.subtitle]
-                  .map(toLine)
-                  .join(" | ")
-              )
-              .join("\n")}
-            onBlur={(event) =>
-              updateBlockProps(index, {
-                slides: event.target.value
-                  .split("\n")
-                  .map((line) => line.trim())
-                  .filter(Boolean)
-                  .map((line) => {
-                    const [image, title, subtitle] = line
-                      .split("|")
-                      .map((value) => value.trim());
-                    return { image, title, subtitle };
-                  }),
-              })
-            }
-          />
-        </label>
-        <label className="grid gap-1">
-          Upload Background Image
+          Hero Image
           <input
             type="file"
             accept="image/*"
@@ -2269,6 +2241,26 @@ export function BlockEditor({
             }}
           />
         </label>
+        {props.backgroundImage ? (
+          <div className="grid gap-2">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <img
+                src={resolveUploadUrl(String(props.backgroundImage))}
+                alt="Hero preview"
+                className="h-36 w-full object-cover"
+              />
+            </div>
+            <button
+              type="button"
+              className="w-fit rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-600"
+              onClick={() => updateBlockProps(index, { backgroundImage: "" })}
+            >
+              Remove hero image
+            </button>
+          </div>
+        ) : (
+          <p className="text-[11px] text-slate-400">No hero image yet.</p>
+        )}
       </div>
     );
   }
