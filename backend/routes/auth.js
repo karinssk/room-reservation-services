@@ -508,4 +508,58 @@ router.post("/auth/customer/login", async (req, res) => {
     }
 });
 
+// Customer Change Password
+router.post("/auth/customer/change-password", async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const token = authHeader.split(" ")[1];
+        const jwt = require("jsonwebtoken");
+
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET || "supersecret");
+        } catch (e) {
+            return res.status(401).json({ error: "Invalid token" });
+        }
+
+        const { currentPassword, newPassword } = req.body;
+        if (!newPassword) {
+            return res.status(400).json({ error: "New password required" });
+        }
+
+        const Customer = require("../models/Customer");
+        const customer = await Customer.findById(decoded.id);
+
+        if (!customer) {
+            return res.status(404).json({ error: "Customer not found" });
+        }
+
+        // If customer has a password, verify current password
+        if (customer.passwordHash) {
+            if (!currentPassword) {
+                return res.status(400).json({ error: "Current password required" });
+            }
+            const valid = await bcrypt.compare(currentPassword, customer.passwordHash);
+            if (!valid) {
+                return res.status(400).json({ error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" });
+            }
+        }
+
+        // Hash and save new password
+        const newPasswordHash = await bcrypt.hash(newPassword, 10);
+        customer.passwordHash = newPasswordHash;
+        await customer.save();
+
+        res.json({ ok: true, message: "Password changed successfully" });
+
+    } catch (error) {
+        console.error("Change Password Error:", error);
+        res.status(500).json({ error: "Failed to change password" });
+    }
+});
+
 module.exports = router;
