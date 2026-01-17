@@ -151,7 +151,7 @@ router.get("/footer", async (_req, res) => {
             brand: {
                 name: "The Wang Yaowarat",
                 description: "Experience the heritage of Yaowarat with modern comfort.",
-                logoUrl: "",
+                logoUrl: `${backendUrl}/uploads/logo-the-wang-yaowarat.png`,
             },
             social: [
                 {
