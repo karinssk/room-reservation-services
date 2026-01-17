@@ -2191,6 +2191,7 @@ export function BlockEditor({
   updateBlockProps,
   uploadImage,
 }: BlockEditorProps) {
+  if (!block) return null;
   const props = block.props as Record<string, unknown>;
 
   if (block.type === "hero") {

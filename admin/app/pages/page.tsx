@@ -2,6 +2,7 @@
 
 import { arrayMove } from "@dnd-kit/sortable";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { defaultProps } from "./builder/config";
 import { PageEditorPane } from "./builder/PageEditorPane";
 import { PagesSidebar } from "./builder/PagesSidebar";
@@ -20,6 +21,7 @@ const createBlock = (type: string): Block => ({
 });
 
 export default function PagesBuilder() {
+  const router = useRouter();
   const [activeBlockIndex, setActiveBlockIndex] = useState<number | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [activeLanguage, setActiveLanguage] = useState<Language>("th");
@@ -267,8 +269,27 @@ export default function PagesBuilder() {
     updatePage({ layout: newLayout });
   };
 
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/");
+  };
+
   return (
     <div>
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          <span aria-hidden>←</span>
+          Back
+        </button>
+        <h1 className="text-sm font-semibold text-slate-700">Pages</h1>
+      </div>
       {backendMissing && (
         <div className="mx-auto mb-4 max-w-6xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
           Backend URL ไม่พร้อมใช้งาน: ตั้งค่า{" "}

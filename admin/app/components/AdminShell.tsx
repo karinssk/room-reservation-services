@@ -15,6 +15,8 @@ export default function AdminShell({ children, mainClassName }: AdminShellProps)
   const [ready, setReady] = useState(false);
   const [adminRole, setAdminRole] = useState("admin");
   const pathname = usePathname();
+  const hideSidebar =
+    pathname.startsWith("/pages") || pathname.startsWith("/email-templates");
 
   const isOwner = useMemo(() => adminRole === "owner", [adminRole]);
 
@@ -87,7 +89,7 @@ export default function AdminShell({ children, mainClassName }: AdminShellProps)
   return (
     <div className="flex min-h-screen bg-slate-100">
       {/* Hide sidebar on mobile, show on desktop */}
-      <AdminSidebar />
+      {!hideSidebar && <AdminSidebar />}
       <main className={`flex-1 ${mainClassName || "px-4 py-6 lg:px-8 lg:py-10"} pb-20 sm:pb-6 lg:pb-10`}>
         {children}
       </main>

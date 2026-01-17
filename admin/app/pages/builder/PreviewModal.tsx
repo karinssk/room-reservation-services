@@ -94,7 +94,7 @@ export function PreviewModal({
   const handleUploadImage = async (file: File): Promise<string> => {
     try {
       const url = await uploadImage(file);
-      
+
       // Show success notification at bottom right
       Swal.fire({
         icon: "success",
@@ -106,7 +106,7 @@ export function PreviewModal({
         timer: 3000,
         timerProgressBar: true,
       });
-      
+
       return url;
     } catch (error) {
       Swal.fire({
@@ -126,7 +126,7 @@ export function PreviewModal({
   // Wrapped save function with notification
   const handleSave = () => {
     onSave();
-    
+
     Swal.fire({
       icon: "success",
       title: "Saved!",
@@ -161,7 +161,7 @@ export function PreviewModal({
           y: constrainedY,
         });
       }
-      
+
       if (isResizing) {
         e.preventDefault();
         let newWidth = editorSize.width;
@@ -185,10 +185,10 @@ export function PreviewModal({
           // Calculate max width when resizing from left (limited by right edge position)
           const rightEdge = screenWidth + editorPosition.x;
           const maxWidthFromLeft = rightEdge - padding;
-          
+
           newWidth = Math.max(minWidth, Math.min(maxWidthFromLeft, resizeStart.width - deltaX));
           newX = resizeStart.posX + (resizeStart.width - newWidth);
-          
+
           // Ensure left edge doesn't go beyond left screen boundary
           const leftEdge = screenWidth + newX;
           if (leftEdge < padding) {
@@ -196,34 +196,34 @@ export function PreviewModal({
             newWidth = rightEdge - padding;
           }
         }
-        
+
         if (resizeDirection.includes("right")) {
           // Calculate max width when resizing from right (limited by screen width)
           const leftEdge = screenWidth + editorPosition.x;
           const maxWidthFromRight = screenWidth - leftEdge - padding;
-          
+
           newWidth = Math.max(minWidth, Math.min(maxWidthFromRight, resizeStart.width + deltaX));
         }
-        
+
         if (resizeDirection.includes("top")) {
           // Calculate max height when resizing from top (limited by bottom edge position)
           const bottomEdge = editorPosition.y + editorSize.height;
           const maxHeightFromTop = bottomEdge - headerHeight;
-          
+
           newHeight = Math.max(minHeight, Math.min(maxHeightFromTop, resizeStart.height - deltaY));
           newY = resizeStart.posY + (resizeStart.height - newHeight);
-          
+
           // Ensure top edge doesn't go above header
           if (newY < headerHeight) {
             newY = headerHeight;
             newHeight = bottomEdge - headerHeight;
           }
         }
-        
+
         if (resizeDirection.includes("bottom")) {
           // Calculate max height when resizing from bottom (limited by screen height)
           const maxHeightFromBottom = screenHeight - editorPosition.y - padding;
-          
+
           newHeight = Math.max(minHeight, Math.min(maxHeightFromBottom, resizeStart.height + deltaY));
         }
 
@@ -262,8 +262,8 @@ export function PreviewModal({
     e.stopPropagation();
     setIsResizing(true);
     setResizeDirection(direction);
-    setResizeStart({ 
-      x: e.clientX, 
+    setResizeStart({
+      x: e.clientX,
       y: e.clientY,
       width: editorSize.width,
       height: editorSize.height,
@@ -426,138 +426,137 @@ export function PreviewModal({
       {/* Inline Editor Card */}
       {activeIndex !== null && (
         <Card
-          className={`z-20 shadow-2xl border-2 overflow-hidden flex flex-col transition-all duration-300 ${
-            isDocked
+          className={`z-20 shadow-2xl border-2 overflow-hidden flex flex-col transition-all duration-300 ${isDocked
               ? 'fixed right-0 top-16 h-[calc(100vh-64px)]'
               : 'fixed'
-          }`}
+            }`}
           style={
             isDocked
               ? {
-                  width: '400px',
-                }
+                width: '400px',
+              }
               : {
-                  right: `${-editorPosition.x}px`,
-                  top: `${editorPosition.y}px`,
-                  width: `${editorSize.width}px`,
-                  height: `${editorSize.height}px`,
-                  cursor: isDragging ? "grabbing" : "default",
-                }
+                right: `${-editorPosition.x}px`,
+                top: `${editorPosition.y}px`,
+                width: `${editorSize.width}px`,
+                height: `${editorSize.height}px`,
+                cursor: isDragging ? "grabbing" : "default",
+              }
           }
         >
-        {/* Resize handles - Only show when undocked */}
-        {!isDocked && (
-          <>
-            <div
-              className="absolute left-0 top-0 h-full w-2 cursor-ew-resize hover:bg-primary/30 transition-colors z-10"
-              onMouseDown={handleResizeStart("left")}
-            />
-            <div
-              className="absolute right-0 top-0 h-full w-2 cursor-ew-resize hover:bg-primary/30 transition-colors z-10"
-              onMouseDown={handleResizeStart("right")}
-            />
-            <div
-              className="absolute top-0 left-0 w-full h-2 cursor-ns-resize hover:bg-primary/30 transition-colors z-10"
-              onMouseDown={handleResizeStart("top")}
-            />
-            <div
-              className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize hover:bg-primary/30 transition-colors z-10"
-              onMouseDown={handleResizeStart("bottom")}
-            />
+          {/* Resize handles - Only show when undocked */}
+          {!isDocked && (
+            <>
+              <div
+                className="absolute left-0 top-0 h-full w-2 cursor-ew-resize hover:bg-primary/30 transition-colors z-10"
+                onMouseDown={handleResizeStart("left")}
+              />
+              <div
+                className="absolute right-0 top-0 h-full w-2 cursor-ew-resize hover:bg-primary/30 transition-colors z-10"
+                onMouseDown={handleResizeStart("right")}
+              />
+              <div
+                className="absolute top-0 left-0 w-full h-2 cursor-ns-resize hover:bg-primary/30 transition-colors z-10"
+                onMouseDown={handleResizeStart("top")}
+              />
+              <div
+                className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize hover:bg-primary/30 transition-colors z-10"
+                onMouseDown={handleResizeStart("bottom")}
+              />
 
-            {/* Resize handles - Corners */}
-            <div
-              className="absolute top-0 left-0 w-4 h-4 cursor-nwse-resize hover:bg-primary/40 transition-colors z-20 rounded-tl-lg"
-              onMouseDown={handleResizeStart("top-left")}
-            />
-            <div
-              className="absolute top-0 right-0 w-4 h-4 cursor-nesw-resize hover:bg-primary/40 transition-colors z-20 rounded-tr-lg"
-              onMouseDown={handleResizeStart("top-right")}
-            />
-            <div
-              className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize hover:bg-primary/40 transition-colors z-20 rounded-bl-lg"
-              onMouseDown={handleResizeStart("bottom-left")}
-            />
-            <div
-              className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize hover:bg-primary/40 transition-colors z-20 rounded-br-lg"
-              onMouseDown={handleResizeStart("bottom-right")}
-            />
-          </>
-        )}
+              {/* Resize handles - Corners */}
+              <div
+                className="absolute top-0 left-0 w-4 h-4 cursor-nwse-resize hover:bg-primary/40 transition-colors z-20 rounded-tl-lg"
+                onMouseDown={handleResizeStart("top-left")}
+              />
+              <div
+                className="absolute top-0 right-0 w-4 h-4 cursor-nesw-resize hover:bg-primary/40 transition-colors z-20 rounded-tr-lg"
+                onMouseDown={handleResizeStart("top-right")}
+              />
+              <div
+                className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize hover:bg-primary/40 transition-colors z-20 rounded-bl-lg"
+                onMouseDown={handleResizeStart("bottom-left")}
+              />
+              <div
+                className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize hover:bg-primary/40 transition-colors z-20 rounded-br-lg"
+                onMouseDown={handleResizeStart("bottom-right")}
+              />
+            </>
+          )}
 
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-base flex items-center gap-2 truncate">
-                <FileEdit className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">Inline Editor</span>
-              </CardTitle>
-              <CardDescription className="mt-1 truncate">
-                {activeElementLabel
-                  ? `Editing: ${activeElementLabel}`
-                  : "Select a section to edit"}
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button
-                onClick={toggleDock}
-                variant="outline"
-                size="sm"
-                title={isDocked ? "Undock editor" : "Dock to right"}
-              >
-                {isDocked ? (
-                  <PanelRightOpen className="h-4 w-4" />
-                ) : (
-                  <PanelRightClose className="h-4 w-4" />
-                )}
-              </Button>
-              {!isDocked && (
+          <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-base flex items-center gap-2 truncate">
+                  <FileEdit className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Inline Editor</span>
+                </CardTitle>
+                <CardDescription className="mt-1 truncate">
+                  {activeElementLabel
+                    ? `Editing: ${activeElementLabel}`
+                    : "Select a section to edit"}
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Button
-                  onMouseDown={handleDragStart}
+                  onClick={toggleDock}
                   variant="outline"
                   size="sm"
-                  className="cursor-grab active:cursor-grabbing"
-                  title="Drag to move"
+                  title={isDocked ? "Undock editor" : "Dock to right"}
                 >
-                  <GripVertical className="h-4 w-4" />
+                  {isDocked ? (
+                    <PanelRightOpen className="h-4 w-4" />
+                  ) : (
+                    <PanelRightClose className="h-4 w-4" />
+                  )}
                 </Button>
-              )}
-              <Button
-                onClick={onClearSelection}
-                variant="outline"
-                size="sm"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+                {!isDocked && (
+                  <Button
+                    onMouseDown={handleDragStart}
+                    variant="outline"
+                    size="sm"
+                    className="cursor-grab active:cursor-grabbing"
+                    title="Drag to move"
+                  >
+                    <GripVertical className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  onClick={onClearSelection}
+                  variant="outline"
+                  size="sm"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-        </CardHeader>
+          </CardHeader>
 
-        <CardContent className="p-5 flex-1 overflow-hidden flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto overflow-x-hidden pr-1">
-            {activeIndex === null ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FileEdit className="h-16 w-16 text-muted-foreground/40 mb-4" />
-                <p className="text-sm font-semibold text-foreground">
-                  No section selected
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Click on a section to edit
-                </p>
-              </div>
-            ) : (
-              <div className="inline-editor-content">
-                <BlockEditor
-                  block={blocks[activeIndex]}
-                  index={activeIndex}
-                  updateBlockProps={updateBlockProps}
-                  uploadImage={handleUploadImage}
-                />
-              </div>
-            )}
-          </div>
-        </CardContent>
-        <style jsx>{`
+          <CardContent className="p-5 flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden pr-1">
+              {activeIndex === null || !blocks[activeIndex] ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <FileEdit className="h-16 w-16 text-muted-foreground/40 mb-4" />
+                  <p className="text-sm font-semibold text-foreground">
+                    {activeIndex === null ? "No section selected" : "Section not found"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Click on a section to edit
+                  </p>
+                </div>
+              ) : (
+                <div className="inline-editor-content">
+                  <BlockEditor
+                    block={blocks[activeIndex]}
+                    index={activeIndex}
+                    updateBlockProps={updateBlockProps}
+                    uploadImage={handleUploadImage}
+                  />
+                </div>
+              )}
+            </div>
+          </CardContent>
+          <style jsx>{`
           /* ===== CONTAINER OVERFLOW CONTROL ===== */
           .inline-editor-content {
             max-width: 100%;
@@ -886,7 +885,7 @@ export function PreviewModal({
             box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
           }
         `}</style>
-      </Card>
+        </Card>
       )}
     </div>
   );

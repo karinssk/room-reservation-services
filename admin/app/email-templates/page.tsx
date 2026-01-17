@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { backendBaseUrl } from "@/lib/urls";
 import { getAdminAuthHeaders } from "@/lib/auth";
 
@@ -70,33 +70,6 @@ const templateOptions = [
   { value: "booking_confirmation", label: "Booking Confirmation" },
   { value: "booking_cancellation", label: "Booking Cancellation" },
   { value: "booking_payment_pending", label: "Payment Pending" },
-];
-
-const placeholderList = [
-  "{{hotelName}}",
-  "{{hotelAddress}}",
-  "{{hotelPhone}}",
-  "{{hotelEmail}}",
-  "{{checkInInfo}}",
-  "{{checkOutInfo}}",
-  "{{guestName}}",
-  "{{bookingNumber}}",
-  "{{roomName}}",
-  "{{guestCount}}",
-  "{{guestLabel}}",
-  "{{checkInDate}}",
-  "{{checkOutDate}}",
-  "{{nights}}",
-  "{{nightLabel}}",
-  "{{roomPrice}}",
-  "{{discount}}",
-  "{{totalPrice}}",
-  "{{promoCode}}",
-  "{{bookingUrl}}",
-  "{{roomNumberBlock}}",
-  "{{discountBlock}}",
-  "{{specialRequestsBlock}}",
-  "{{cancellationReasonBlock}}",
 ];
 
 const emptyTemplate: EmailTemplate = {
@@ -188,56 +161,62 @@ const defaultPendingEditor: BookingConfirmationEditor = {
   footerLine2: "{{hotelPhone}} | {{hotelEmail}}",
 };
 
-export default function EmailTemplatesPage() {
-  const [selectedType, setSelectedType] = useState("booking_confirmation");
-  const [template, setTemplate] = useState<EmailTemplate>(emptyTemplate);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+const inputClassName = "w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
+const textareaClassName = "min-h-[80px] w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
 
-  const loadTemplate = async (type: string) => {
-    if (!backendBaseUrl) return;
-    setLoading(true);
-    try {
-      const response = await fetch(`${backendBaseUrl}/email-templates/${type}`, {
-        headers: getAdminAuthHeaders(),
-      });
-      const data = await response.json();
-      if (data.template) {
-        const editorData =
-          data.template.editorData ||
-          (type === "booking_cancellation"
-            ? defaultCancellationEditor
-            : type === "booking_payment_pending"
-              ? defaultPendingEditor
-              : defaultConfirmationEditor);
-        setTemplate({ ...data.template, editorData });
-      }
-    } catch (error) {
-      console.error("Failed to load email template:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+function FormInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={inputClassName}
+      placeholder={placeholder}
+    />
+  );
+}
 
-  useEffect(() => {
-    loadTemplate(selectedType);
-  }, [selectedType]);
+function FormTextarea({ value, onChange, placeholder, rows }: { value: string; onChange: (v: string) => void; placeholder: string; rows?: number }) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={textareaClassName}
+      style={rows ? { minHeight: `${rows * 24}px` } : undefined}
+      placeholder={placeholder}
+    />
+  );
+}
 
-  const escapeHtml = (value: string) =>
-    value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+function CollapsibleSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details className="group rounded-lg border border-slate-200 bg-slate-50">
+      <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100">
+        <span>{title}</span>
+        <span className="text-slate-400 transition-transform group-open:rotate-180">▼</span>
+      </summary>
+      <div className="grid gap-4 border-t border-slate-200 p-4 sm:grid-cols-2">
+        {children}
+      </div>
+    </details>
+  );
+}
 
-  const formatText = (value: string) =>
-    escapeHtml(value).replace(/\n/g, "<br>");
+function escapeHtml(value: string) {
+  return (value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
-  const buildConfirmationHtml = (editorData: BookingConfirmationEditor) => {
-    const infoLines = formatText(editorData.checkInInfoLines || "");
-    return `<!DOCTYPE html>
+function formatText(value: string) {
+  return escapeHtml(value || "").replace(/\n/g, "<br>");
+}
+
+function buildConfirmationHtml(editorData: BookingConfirmationEditor) {
+  const infoLines = formatText(editorData.checkInInfoLines || "");
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -333,10 +312,10 @@ export default function EmailTemplatesPage() {
   </div>
 </body>
 </html>`;
-  };
+}
 
-  const buildCancellationHtml = (editorData: BookingCancellationEditor) => {
-    return `<!DOCTYPE html>
+function buildCancellationHtml(editorData: BookingCancellationEditor) {
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -375,18 +354,64 @@ export default function EmailTemplatesPage() {
   </div>
 </body>
 </html>`;
-  };
+}
+
+export default function EmailTemplatesPage() {
+  const [selectedType, setSelectedType] = useState("booking_confirmation");
+  const [template, setTemplate] = useState<EmailTemplate>(emptyTemplate);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const loadTemplate = useCallback(async (type: string) => {
+    if (!backendBaseUrl) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`${backendBaseUrl}/email-templates/${type}`, {
+        headers: getAdminAuthHeaders(),
+      });
+      const data = await response.json();
+      if (data.template) {
+        const editorData =
+          data.template.editorData ||
+          (type === "booking_cancellation"
+            ? defaultCancellationEditor
+            : type === "booking_payment_pending"
+              ? defaultPendingEditor
+              : defaultConfirmationEditor);
+        setTemplate({ ...data.template, editorData });
+      }
+    } catch (error) {
+      console.error("Failed to load email template:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTemplate(selectedType);
+  }, [selectedType, loadTemplate]);
+
+  const updateStaticInfo = useCallback((field: keyof StaticInfo, value: string) => {
+    setTemplate((prev) => ({
+      ...prev,
+      staticInfo: { ...prev.staticInfo, [field]: value },
+    }));
+  }, []);
+
+  const updateEditorField = useCallback(<T extends BookingConfirmationEditor | BookingCancellationEditor>(field: keyof T, value: string) => {
+    setTemplate((prev) => ({
+      ...prev,
+      editorData: { ...prev.editorData, [field]: value } as T,
+    }));
+  }, []);
 
   const derivedHtml = useMemo(() => {
     if (!template.editorData) return template.html || "";
     if (selectedType === "booking_cancellation") {
-      return buildCancellationHtml(
-        template.editorData as BookingCancellationEditor
-      );
+      return buildCancellationHtml(template.editorData as BookingCancellationEditor);
     }
-    return buildConfirmationHtml(
-      template.editorData as BookingConfirmationEditor
-    );
+    return buildConfirmationHtml(template.editorData as BookingConfirmationEditor);
   }, [selectedType, template.editorData, template.html]);
 
   const saveTemplate = async () => {
@@ -425,719 +450,181 @@ export default function EmailTemplatesPage() {
     }
   };
 
+  const confirmationData = template.editorData as BookingConfirmationEditor;
+  const cancellationData = template.editorData as BookingCancellationEditor;
+
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Email Templates</h1>
-          <p className="text-xs text-slate-500">
-            Customize subjects, HTML, and hotel info used in booking emails.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={saveTemplate}
-            disabled={saving || loading}
-            className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-            type="button"
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
-          {message && <span className="text-xs text-emerald-600">{message}</span>}
-        </div>
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_280px]">
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <label className="text-xs font-semibold uppercase text-slate-500">
-              Template Type
-            </label>
-            <select
-              value={selectedType}
-              onChange={(event) => setSelectedType(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+    <div className="min-h-screen bg-slate-50 p-4 md:p-6">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => window.history.back()}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition-colors hover:bg-slate-50"
+              type="button"
+              aria-label="Go back"
             >
-              {templateOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <label className="text-xs font-semibold uppercase text-slate-500">
-              Subject
-            </label>
-            <input
-              value={template.subject}
-              onChange={(event) =>
-                setTemplate((prev) => ({ ...prev, subject: event.target.value }))
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              placeholder="Booking Confirmation - {{bookingNumber}} - {{hotelName}}"
-            />
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-700">Hotel Info</h2>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <input
-                value={template.staticInfo?.hotelName || ""}
-                onChange={(event) =>
-                  setTemplate((prev) => ({
-                    ...prev,
-                    staticInfo: { ...prev.staticInfo, hotelName: event.target.value },
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                placeholder="Hotel name"
-              />
-              <input
-                value={template.staticInfo?.hotelPhone || ""}
-                onChange={(event) =>
-                  setTemplate((prev) => ({
-                    ...prev,
-                    staticInfo: { ...prev.staticInfo, hotelPhone: event.target.value },
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                placeholder="Phone"
-              />
-              <input
-                value={template.staticInfo?.hotelEmail || ""}
-                onChange={(event) =>
-                  setTemplate((prev) => ({
-                    ...prev,
-                    staticInfo: { ...prev.staticInfo, hotelEmail: event.target.value },
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                placeholder="Email"
-              />
-              <input
-                value={template.staticInfo?.hotelAddress || ""}
-                onChange={(event) =>
-                  setTemplate((prev) => ({
-                    ...prev,
-                    staticInfo: { ...prev.staticInfo, hotelAddress: event.target.value },
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                placeholder="Address"
-              />
-              <input
-                value={template.staticInfo?.checkInInfo || ""}
-                onChange={(event) =>
-                  setTemplate((prev) => ({
-                    ...prev,
-                    staticInfo: { ...prev.staticInfo, checkInInfo: event.target.value },
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                placeholder="Check-in info"
-              />
-              <input
-                value={template.staticInfo?.checkOutInfo || ""}
-                onChange={(event) =>
-                  setTemplate((prev) => ({
-                    ...prev,
-                    staticInfo: { ...prev.staticInfo, checkOutInfo: event.target.value },
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                placeholder="Check-out info"
-              />
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Email Templates</h1>
+              <p className="mt-1 text-sm text-slate-600">
+                Customize subjects, HTML, and hotel info used in booking emails.
+              </p>
             </div>
           </div>
-
-          {selectedType === "booking_cancellation" ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-700">Email Content</h2>
-              <div className="mt-4 grid gap-4">
-                <input
-                  value={(template.editorData as BookingCancellationEditor)?.headerTitle || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingCancellationEditor),
-                        headerTitle: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Header title"
-                />
-                <input
-                  value={(template.editorData as BookingCancellationEditor)?.greetingLine || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingCancellationEditor),
-                        greetingLine: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Greeting line"
-                />
-                <textarea
-                  value={(template.editorData as BookingCancellationEditor)?.introLine || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingCancellationEditor),
-                        introLine: event.target.value,
-                      },
-                    }))
-                  }
-                  className="min-h-[80px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Intro line"
-                />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <input
-                    value={(template.editorData as BookingCancellationEditor)?.bookingNumberLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingCancellationEditor),
-                          bookingNumberLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Booking number label"
-                  />
-                  <input
-                    value={(template.editorData as BookingCancellationEditor)?.roomLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingCancellationEditor),
-                          roomLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Room label"
-                  />
-                  <input
-                    value={(template.editorData as BookingCancellationEditor)?.checkInLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingCancellationEditor),
-                          checkInLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Check-in label"
-                  />
-                  <input
-                    value={(template.editorData as BookingCancellationEditor)?.checkOutLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingCancellationEditor),
-                          checkOutLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Check-out label"
-                  />
-                  <input
-                    value={(template.editorData as BookingCancellationEditor)?.cancellationReasonLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingCancellationEditor),
-                          cancellationReasonLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Cancellation reason label"
-                  />
-                </div>
-                <textarea
-                  value={(template.editorData as BookingCancellationEditor)?.closingLine1 || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingCancellationEditor),
-                        closingLine1: event.target.value,
-                      },
-                    }))
-                  }
-                  className="min-h-[80px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Closing line 1"
-                />
-                <textarea
-                  value={(template.editorData as BookingCancellationEditor)?.closingLine2 || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingCancellationEditor),
-                        closingLine2: event.target.value,
-                      },
-                    }))
-                  }
-                  className="min-h-[60px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Closing line 2"
-                />
-                <input
-                  value={(template.editorData as BookingCancellationEditor)?.signatureLine || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingCancellationEditor),
-                        signatureLine: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Signature line"
-                />
-                <input
-                  value={(template.editorData as BookingCancellationEditor)?.footerLine1 || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingCancellationEditor),
-                        footerLine1: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Footer line 1"
-                />
-                <input
-                  value={(template.editorData as BookingCancellationEditor)?.footerLine2 || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingCancellationEditor),
-                        footerLine2: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Footer line 2"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-700">Email Content</h2>
-              <div className="mt-4 grid gap-4">
-                <input
-                  value={(template.editorData as BookingConfirmationEditor)?.headerTitle || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        headerTitle: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Header title"
-                />
-                <input
-                  value={(template.editorData as BookingConfirmationEditor)?.headerSubtitle || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        headerSubtitle: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Header subtitle"
-                />
-                <input
-                  value={(template.editorData as BookingConfirmationEditor)?.greetingLine || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        greetingLine: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Greeting line"
-                />
-                <textarea
-                  value={(template.editorData as BookingConfirmationEditor)?.introLine || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        introLine: event.target.value,
-                      },
-                    }))
-                  }
-                  className="min-h-[80px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Intro line"
-                />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.bookingNumberLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          bookingNumberLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Booking number label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.roomDetailsTitle || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          roomDetailsTitle: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Room details title"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.roomTypeLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          roomTypeLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Room type label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.roomNumberLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          roomNumberLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Room number label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.guestCountLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          guestCountLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Guest count label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.stayDetailsTitle || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          stayDetailsTitle: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Stay details title"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.checkInLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          checkInLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Check-in label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.checkOutLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          checkOutLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Check-out label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.lengthOfStayLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          lengthOfStayLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Length of stay label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.priceDetailsTitle || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          priceDetailsTitle: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Price details title"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.roomPriceLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          roomPriceLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Room price label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.discountLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          discountLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Discount label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.totalLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          totalLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Total label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.specialRequestsTitle || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          specialRequestsTitle: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Special requests label"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.checkInInfoTitle || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          checkInInfoTitle: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Check-in info title"
-                  />
-                  <input
-                    value={(template.editorData as BookingConfirmationEditor)?.buttonLabel || ""}
-                    onChange={(event) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        editorData: {
-                          ...(prev.editorData as BookingConfirmationEditor),
-                          buttonLabel: event.target.value,
-                        },
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    placeholder="Button label"
-                  />
-                </div>
-                <textarea
-                  value={(template.editorData as BookingConfirmationEditor)?.checkInInfoLines || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        checkInInfoLines: event.target.value,
-                      },
-                    }))
-                  }
-                  className="min-h-[120px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Check-in info lines (one per line)"
-                />
-                <textarea
-                  value={(template.editorData as BookingConfirmationEditor)?.closingLine1 || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        closingLine1: event.target.value,
-                      },
-                    }))
-                  }
-                  className="min-h-[80px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Closing line 1"
-                />
-                <textarea
-                  value={(template.editorData as BookingConfirmationEditor)?.closingLine2 || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        closingLine2: event.target.value,
-                      },
-                    }))
-                  }
-                  className="min-h-[60px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Closing line 2"
-                />
-                <input
-                  value={(template.editorData as BookingConfirmationEditor)?.signatureLine || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        signatureLine: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Signature line"
-                />
-                <input
-                  value={(template.editorData as BookingConfirmationEditor)?.footerLine1 || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        footerLine1: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Footer line 1"
-                />
-                <input
-                  value={(template.editorData as BookingConfirmationEditor)?.footerLine2 || ""}
-                  onChange={(event) =>
-                    setTemplate((prev) => ({
-                      ...prev,
-                      editorData: {
-                        ...(prev.editorData as BookingConfirmationEditor),
-                        footerLine2: event.target.value,
-                      },
-                    }))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  placeholder="Footer line 2"
-                />
-              </div>
-            </div>
-          )}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-700">Preview</h2>
-            <div
-              className="mt-4 overflow-auto rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700"
-              dangerouslySetInnerHTML={{ __html: derivedHtml }}
-            />
+          <div className="flex items-center gap-3">
+            {message && <span className="text-sm font-medium text-emerald-600">{message}</span>}
+            <button
+              onClick={saveTemplate}
+              disabled={saving || loading}
+              className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50"
+              type="button"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-xs text-slate-600 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-700">Placeholders</h2>
-          <p className="mt-2 text-xs text-slate-500">
-            Use these variables inside subject or HTML.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {placeholderList.map((item) => (
-              <span
-                key={item}
-                className="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-700"
-              >
-                {item}
-              </span>
-            ))}
+        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+          <div className="space-y-6">
+            {/* Template Type & Subject */}
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Template Type
+                  </label>
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    {templateOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Subject
+                  </label>
+                  <FormInput
+                    value={template.subject}
+                    onChange={(v) => setTemplate((prev) => ({ ...prev, subject: v }))}
+                    placeholder="Booking Confirmation - {{bookingNumber}}"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Hotel Info */}
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-base font-semibold text-slate-900">Hotel Info</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormInput value={template.staticInfo?.hotelName || ""} onChange={(v) => updateStaticInfo("hotelName", v)} placeholder="Hotel name" />
+                <FormInput value={template.staticInfo?.hotelPhone || ""} onChange={(v) => updateStaticInfo("hotelPhone", v)} placeholder="Phone" />
+                <FormInput value={template.staticInfo?.hotelEmail || ""} onChange={(v) => updateStaticInfo("hotelEmail", v)} placeholder="Email" />
+                <FormInput value={template.staticInfo?.hotelAddress || ""} onChange={(v) => updateStaticInfo("hotelAddress", v)} placeholder="Address" />
+                <FormInput value={template.staticInfo?.checkInInfo || ""} onChange={(v) => updateStaticInfo("checkInInfo", v)} placeholder="Check-in info" />
+                <FormInput value={template.staticInfo?.checkOutInfo || ""} onChange={(v) => updateStaticInfo("checkOutInfo", v)} placeholder="Check-out info" />
+              </div>
+            </div>
+
+            {/* Email Content */}
+            {selectedType === "booking_cancellation" ? (
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-base font-semibold text-slate-900">Email Content</h2>
+                <div className="space-y-4">
+                  <FormInput value={cancellationData?.headerTitle || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("headerTitle", v)} placeholder="Header title" />
+                  <FormInput value={cancellationData?.greetingLine || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("greetingLine", v)} placeholder="Greeting line" />
+                  <FormTextarea value={cancellationData?.introLine || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("introLine", v)} placeholder="Intro line" />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormInput value={cancellationData?.bookingNumberLabel || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("bookingNumberLabel", v)} placeholder="Booking number label" />
+                    <FormInput value={cancellationData?.roomLabel || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("roomLabel", v)} placeholder="Room label" />
+                    <FormInput value={cancellationData?.checkInLabel || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("checkInLabel", v)} placeholder="Check-in label" />
+                    <FormInput value={cancellationData?.checkOutLabel || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("checkOutLabel", v)} placeholder="Check-out label" />
+                    <FormInput value={cancellationData?.cancellationReasonLabel || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("cancellationReasonLabel", v)} placeholder="Cancellation reason label" />
+                  </div>
+                  <FormTextarea value={cancellationData?.closingLine1 || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("closingLine1", v)} placeholder="Closing line 1" />
+                  <FormTextarea value={cancellationData?.closingLine2 || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("closingLine2", v)} placeholder="Closing line 2" rows={3} />
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <FormInput value={cancellationData?.signatureLine || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("signatureLine", v)} placeholder="Signature line" />
+                    <FormInput value={cancellationData?.footerLine1 || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("footerLine1", v)} placeholder="Footer line 1" />
+                    <FormInput value={cancellationData?.footerLine2 || ""} onChange={(v) => updateEditorField<BookingCancellationEditor>("footerLine2", v)} placeholder="Footer line 2" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-base font-semibold text-slate-900">Email Content</h2>
+                <div className="space-y-4">
+                  <FormInput value={confirmationData?.headerTitle || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("headerTitle", v)} placeholder="Header title" />
+                  <FormInput value={confirmationData?.headerSubtitle || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("headerSubtitle", v)} placeholder="Header subtitle" />
+                  <FormInput value={confirmationData?.greetingLine || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("greetingLine", v)} placeholder="Greeting line" />
+                  <FormTextarea value={confirmationData?.introLine || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("introLine", v)} placeholder="Intro line" />
+
+                  <CollapsibleSection title="Booking Details Labels">
+                    <FormInput value={confirmationData?.bookingNumberLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("bookingNumberLabel", v)} placeholder="Booking number label" />
+                    <FormInput value={confirmationData?.roomDetailsTitle || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("roomDetailsTitle", v)} placeholder="Room details title" />
+                    <FormInput value={confirmationData?.roomTypeLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("roomTypeLabel", v)} placeholder="Room type label" />
+                    <FormInput value={confirmationData?.roomNumberLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("roomNumberLabel", v)} placeholder="Room number label" />
+                    <FormInput value={confirmationData?.guestCountLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("guestCountLabel", v)} placeholder="Guest count label" />
+                    <FormInput value={confirmationData?.stayDetailsTitle || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("stayDetailsTitle", v)} placeholder="Stay details title" />
+                    <FormInput value={confirmationData?.checkInLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("checkInLabel", v)} placeholder="Check-in label" />
+                    <FormInput value={confirmationData?.checkOutLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("checkOutLabel", v)} placeholder="Check-out label" />
+                    <FormInput value={confirmationData?.lengthOfStayLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("lengthOfStayLabel", v)} placeholder="Length of stay label" />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection title="Price & Footer Settings">
+                    <FormInput value={confirmationData?.priceDetailsTitle || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("priceDetailsTitle", v)} placeholder="Price details title" />
+                    <FormInput value={confirmationData?.roomPriceLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("roomPriceLabel", v)} placeholder="Room price label" />
+                    <FormInput value={confirmationData?.discountLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("discountLabel", v)} placeholder="Discount label" />
+                    <FormInput value={confirmationData?.totalLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("totalLabel", v)} placeholder="Total label" />
+                    <FormInput value={confirmationData?.specialRequestsTitle || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("specialRequestsTitle", v)} placeholder="Special requests title" />
+                    <FormInput value={confirmationData?.checkInInfoTitle || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("checkInInfoTitle", v)} placeholder="Check-in info title" />
+                  </CollapsibleSection>
+
+                  <div className="space-y-4">
+                    <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Check-in Instructions & Footer
+                    </label>
+                    <FormTextarea value={confirmationData?.checkInInfoLines || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("checkInInfoLines", v)} placeholder="Check-in info lines (bullets)" rows={4} />
+                    <FormInput value={confirmationData?.buttonLabel || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("buttonLabel", v)} placeholder="Button label" />
+                    <FormTextarea value={confirmationData?.closingLine1 || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("closingLine1", v)} placeholder="Closing line 1" />
+                    <FormTextarea value={confirmationData?.closingLine2 || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("closingLine2", v)} placeholder="Closing line 2" rows={3} />
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <FormInput value={confirmationData?.signatureLine || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("signatureLine", v)} placeholder="Signature line" />
+                      <FormInput value={confirmationData?.footerLine1 || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("footerLine1", v)} placeholder="Footer line 1" />
+                      <FormInput value={confirmationData?.footerLine2 || ""} onChange={(v) => updateEditorField<BookingConfirmationEditor>("footerLine2", v)} placeholder="Footer line 2" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Preview */}
+          <div className="lg:sticky lg:top-6 lg:self-start">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 px-4 py-3">
+                <h2 className="text-sm font-semibold text-slate-900">Preview</h2>
+              </div>
+              <div className="h-[600px] overflow-auto">
+                {loading ? (
+                  <div className="flex h-full items-center justify-center text-slate-400">Loading...</div>
+                ) : (
+                  <iframe
+                    srcDoc={derivedHtml}
+                    className="h-full w-full border-0"
+                    title="Email Preview"
+                    sandbox="allow-same-origin"
+                  />
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
