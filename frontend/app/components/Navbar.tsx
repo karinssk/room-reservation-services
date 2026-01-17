@@ -117,6 +117,7 @@ function NavDropdownItem({ item }: { item: NavItem }) {
 
 export default function Navbar({
   items,
+  cta,
   logoUrl,
 }: {
   items: NavItem[];
@@ -289,12 +290,14 @@ export default function Navbar({
                 </div>
               )}
             </div>
-            <Link
-              href="/booking"
-              className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
-            >
-              Book
-            </Link>
+            {cta ? (
+              <Link
+                href={cta.href}
+                className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
+              >
+                {cta.label}
+              </Link>
+            ) : null}
           </div>
 
           <div className="hidden items-center gap-6 text-sm lg:flex">
@@ -332,12 +335,16 @@ export default function Navbar({
             >
               Sign-in
             </button>
-            <Link
-              href="/booking"
-              className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
-            >
-              Book
-            </Link>
+            {cta ? (
+              <Link
+                href={cta.href}
+                className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+                target={cta.href.startsWith("http") ? "_blank" : undefined}
+                rel={cta.href.startsWith("http") ? "noopener noreferrer" : undefined}
+              >
+                {cta.label}
+              </Link>
+            ) : null}
           </div>
         </div>
         {mobileOpen && (
@@ -377,12 +384,14 @@ export default function Navbar({
                 >
                   Sign-in
                 </button>
-                <Link
-                  href="/booking"
-                  className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
-                >
-                  Book
-                </Link>
+                {cta ? (
+                  <Link
+                    href={cta.href}
+                    className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
+                  >
+                    {cta.label}
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>

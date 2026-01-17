@@ -48,7 +48,7 @@ export default function PageRenderer({ page }: { page: Page }) {
             return <Hero key={index} {...block.props} />;
           case "hero-images":
             return <HeroImages key={index} {...block.props} />;
-          case "hero-with-available-booking-check":
+          case "hero-with-available-rooms-check":
             return <HeroWithAvailableRoomsCheck key={index} {...block.props} />;
           case "contact-and-services":
             return <ContactAndServices key={index} {...block.props} />;
