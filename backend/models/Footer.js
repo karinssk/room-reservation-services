@@ -35,7 +35,7 @@ const footerSchema = new mongoose.Schema(
         name: { type: String, required: true, unique: true },
         backgroundColor: { type: String, default: "#0b3c86" },
         brand: {
-            name: { type: String, default: "RCA Aircon Express" },
+            name: { type: String, default: "The Wang Yaowarat" },
             description: { type: String, default: "" },
             logoUrl: { type: String, default: "" },
         },

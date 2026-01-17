@@ -149,9 +149,9 @@ router.get("/footer", async (_req, res) => {
             name: "main",
             backgroundColor: "#0b3c86",
             brand: {
-                name: "RCA Aircon Express",
-                description: "บริการแอร์ครบวงจรสำหรับธุรกิจ มืออาชีพ รวดเร็ว มาตรฐานสูง",
-                logoUrl: `${backendUrl}/uploads/1767366947883-logo-air-con-services.webp`,
+                name: "The Wang Yaowarat",
+                description: "Experience the heritage of Yaowarat with modern comfort.",
+                logoUrl: "",
             },
             social: [
                 {
@@ -215,9 +215,9 @@ router.get("/footer", async (_req, res) => {
                 },
                 {
                     id: randomUUID(),
-                    label: "info@rcaaircon.com",
+                    label: "info@thewangyaowarat.com",
                     value: "",
-                    href: "mailto:info@rcaaircon.com",
+                    href: "mailto:info@thewangyaowarat.com",
                     icon: "https://cdn.jsdelivr.net/npm/heroicons@2.1.5/24/outline/envelope.svg",
                 },
                 {
@@ -229,8 +229,8 @@ router.get("/footer", async (_req, res) => {
                 },
             ],
             copyright:
-                "© 2026 RCA AIRCON EXPRESS. All rights reserved.",
-            subfooter: "Cooling Business Fast & Smart.",
+                "© 2026 The Wang Yaowarat. All rights reserved.",
+            subfooter: "Dashboard & Content Studio",
         };
         await Footer.create(footer);
     }
