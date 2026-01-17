@@ -28,7 +28,9 @@ const BACKEND_URL = resolveBaseUrl(
 process.env.FRONTEND_URL = FRONTEND_URL;
 process.env.ADMIN_URL = ADMIN_URL;
 process.env.BACKEND_URL = BACKEND_URL;
-
+process.env.LINE_CLIENT_ID = process.env.LINE_CLIENT_ID;
+process.env.LINE_CLIENT_SECRET = process.env.LINE_CLIENT_SECRET;
+process.env.LINE_CALLBACK_URL = process.env.LINE_CALLBACK_URL;
 const allowedOrigins = [
   FRONTEND_URL,
   ADMIN_URL,

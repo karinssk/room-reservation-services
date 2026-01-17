@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { backendBaseUrl } from "@/lib/urls";
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("customer123@gmail.com");
-  const [password, setPassword] = useState("258369");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -57,15 +57,6 @@ export default function AdminLoginPage() {
     setMessage(data.error || "เข้าสู่ระบบไม่สำเร็จ");
   };
 
-  const handleOAuth = (provider: string) => {
-    setMessage(null);
-    const target =
-      provider === "google"
-        ? `${backendBaseUrl}/api/auth/google`
-        : `${backendBaseUrl}/api/auth/line`;
-    window.location.href = target;
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-6">
       <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
@@ -97,25 +88,6 @@ export default function AdminLoginPage() {
           {message && <p className="text-xs text-rose-500">{message}</p>}
         </div>
 
-        <div className="my-6 h-px bg-slate-100" />
-        <p className="text-xs text-slate-400">Login with</p>
-        <div className="mt-3 flex gap-3">
-          <button
-            onClick={() => handleOAuth("google")}
-            className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs"
-          >
-            Google
-          </button>
-          <button
-            onClick={() => handleOAuth("line")}
-            className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs"
-          >
-            LINE
-          </button>
-        </div>
-        <p className="mt-4 text-[10px] text-slate-400 bg-yellow-50 p-2 rounded-lg">
-          Test login: customer123@gmail.com / 258369
-        </p>
       </div>
     </div>
   );
