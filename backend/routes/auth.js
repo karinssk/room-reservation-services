@@ -20,6 +20,9 @@ console.log("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? "Loaded"
 console.log("BACKEND_URL:", process.env.BACKEND_URL);
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
 console.log("ADMIN_URL:", process.env.ADMIN_URL);
+console.log("LINE_CLIENT_ID:", process.env.LINE_CLIENT_ID ? "Loaded" : "MISSING");
+console.log("LINE_CLIENT_SECRET:", process.env.LINE_CLIENT_SECRET ? "Loaded" : "MISSING");
+console.log("LINE_CALLBACK_URL:", process.env.LINE_CALLBACK_URL);
 console.log("----------------------------");
 // -----------------------------------------
 
