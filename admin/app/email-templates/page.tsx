@@ -426,7 +426,7 @@ export default function EmailTemplatesPage() {
   };
 
   return (
-    <div className="w-full max-w-none mx-0">
+    <div className="mx-auto max-w-6xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Email Templates</h1>
