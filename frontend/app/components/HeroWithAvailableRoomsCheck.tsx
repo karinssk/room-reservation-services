@@ -47,7 +47,7 @@ export default function HeroWithAvailablebookingCheck({
 
   const handleSearch = () => {
     const query = new URLSearchParams({ checkIn, checkOut }).toString();
-    router.push(`/${locale}/booking?${query}`);
+    router.push(`/${locale}/rooms?${query}`);
   };
 
   const backgroundStyle = backgroundImage
@@ -111,7 +111,7 @@ export default function HeroWithAvailablebookingCheck({
             </button>
           </div>
           <div className="mt-3 text-xs text-slate-400">
-            Results open at /{locale}/booking with your dates.
+            Results open at /{locale}/rooms with your dates.
           </div>
         </div>
       </div>

@@ -2310,28 +2310,64 @@ export function BlockEditor({
           </label>
         ))}
         <label className="grid gap-1">
-          Background Image URL
-          <input
-            className="rounded-xl border border-slate-200 px-3 py-2"
-            defaultValue={toLine(props.backgroundImage as string)}
-            onBlur={(event) =>
-              updateBlockProps(index, { backgroundImage: event.target.value })
-            }
-          />
-        </label>
-        <label className="grid gap-1">
-          Upload Background Image
-          <input
-            type="file"
-            accept="image/*"
-            className="rounded-xl border border-slate-200 px-3 py-2"
-            onChange={async (event) => {
-              const file = event.target.files?.[0];
-              if (!file) return;
-              const url = await uploadImage(file);
-              updateBlockProps(index, { backgroundImage: url });
-            }}
-          />
+          Background Image
+          <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            {props.backgroundImage ? (
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <img
+                  src={resolveUploadUrl(props.backgroundImage as string)}
+                  alt="Background"
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateBlockProps(index, { backgroundImage: "" })
+                  }
+                  className="absolute right-2 top-2 rounded-full bg-rose-600 p-1.5 text-white shadow hover:bg-rose-700 transition"
+                  title="Remove image"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white text-slate-400">
+                <svg className="h-8 w-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-xs">No image selected</span>
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <input
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                placeholder="Image URL..."
+                value={props.backgroundImage as string || ""}
+                onChange={(event) =>
+                  updateBlockProps(index, { backgroundImage: event.target.value })
+                }
+              />
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    const url = await uploadImage(file);
+                    updateBlockProps(index, { backgroundImage: url });
+                  }}
+                />
+                <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-white border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 button">
+                  <span>📂 Classification/Click to upload</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </label>
         <label className="grid gap-1">
           Title Color

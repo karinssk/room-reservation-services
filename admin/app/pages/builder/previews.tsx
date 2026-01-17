@@ -39,9 +39,9 @@ const pickReadableTextColor = (value: string, fallback: string) => {
   if (!match) return fallback;
   const hex = match[1].length === 3
     ? match[1]
-        .split("")
-        .map((char) => char + char)
-        .join("")
+      .split("")
+      .map((char) => char + char)
+      .join("")
     : match[1];
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
@@ -314,7 +314,7 @@ export function LivePreview({
     if (block.type === "hero-with-available-rooms-check") {
       const backgroundImage = safeText(props.backgroundImage);
       return wrap(
-        <section className="relative overflow-hidden bg-slate-900 text-white">
+        <section className="relative overflow-hidden bg-slate-900 text-slate-50">
           {backgroundImage && (
             <div
               className="absolute inset-0 -z-10 bg-cover bg-center opacity-40"
@@ -324,27 +324,27 @@ export function LivePreview({
           <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-slate-900/80" />
           <div className="mx-auto grid max-w-6xl gap-6 px-6 py-10 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/90">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-50/90">
                 <EditableText
                   value={safeText(props.subtitle)}
                   onCommit={(value) => onUpdateBlock(index, { subtitle: value })}
-                  className="text-white/90"
+                  className="text-slate-50/90"
                 />
               </p>
-              <h2 className="text-3xl font-semibold text-white">
+              <h2 className="text-3xl font-semibold text-slate-50">
                 <EditableText
                   value={safeText(props.title)}
                   onCommit={(value) => onUpdateBlock(index, { title: value })}
-                  className="text-white"
+                  className="text-slate-50"
                 />
               </h2>
-              <p className="text-sm text-white/80">
+              <p className="text-sm text-slate-50/80">
                 <EditableText
                   value={safeText(props.description)}
                   onCommit={(value) =>
                     onUpdateBlock(index, { description: value })
                   }
-                  className="text-white/80"
+                  className="text-slate-50/80"
                   multiline
                 />
               </p>
@@ -1560,9 +1560,9 @@ export function LivePreview({
                   style={
                     cardBackgroundColor
                       ? {
-                          backgroundColor: cardBackgroundColor,
-                          minHeight: cardMinHeight || undefined,
-                        }
+                        backgroundColor: cardBackgroundColor,
+                        minHeight: cardMinHeight || undefined,
+                      }
                       : undefined
                   }
                 >
@@ -2859,11 +2859,10 @@ function SortablePreviewSection({
         const isAfter = event.clientY - rect.top > rect.height / 2;
         onDropHover(index, isAfter ? "after" : "before");
       }}
-      className={`relative cursor-pointer transition ${
-        active
+      className={`relative cursor-pointer transition ${active
           ? "outline outline-2 outline-blue-500"
           : "hover:outline hover:outline-2 hover:outline-blue-300"
-      }`}
+        }`}
     >
       {dropTarget?.index === index && dropTarget.position === "before" && (
         <div className="pointer-events-none mb-4 rounded-2xl border-2 border-dashed border-blue-400 bg-blue-50/70 px-4 py-4 text-center text-xs font-semibold text-blue-700 shadow-sm">
